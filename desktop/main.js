@@ -3,7 +3,9 @@ const path = require('path');
 function createWindow() {
   const win = new BrowserWindow({
     width: 1180, height: 820, minWidth: 900, minHeight: 600,
-    backgroundColor: '#0a0e0d', autoHideMenuBar: true, titleBarStyle: 'hiddenInset',
+    backgroundColor: '#f5f8f6',
+    icon: path.join(__dirname, 'build', 'icon.png'),
+    autoHideMenuBar: true, titleBarStyle: 'hiddenInset',
     webPreferences: { contextIsolation: true },
   });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));

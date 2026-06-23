@@ -26,14 +26,16 @@
         "deb"
       ],
       "category": "Network",
-      "maintainer": "Bapista Khan <bapistakhan@gmail.com>"
+      "maintainer": "Bapista Khan <bapistakhan@gmail.com>",
+      "icon": "build/icon.png"
     },
     "mac": {
       "target": "dmg"
     },
     "win": {
       "target": "nsis"
-    }
+    },
+    "icon": "build/icon.png"
   },
   "devDependencies": {
     "electron": "^33.0.0",
