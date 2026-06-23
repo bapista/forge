@@ -1,47 +1,55 @@
-# FORGE dashboard — the friendly face. Served on every node at :30080 (NodePort),
-# so any client (Mac, Windows, phone) can open it. Real AI apps plug in here later.
+# FORGE dashboard — the app launcher. Served on every node at :30080 (NodePort).
+# App modules (NeuronAI, Aegis AI, Cipher) plug in as tiles; the cluster strip
+# reuses the canonical /api/cluster/nodes fleet API (same one NeuronAI + Cipher use).
 apiVersion: v1
 kind: ConfigMap
 metadata: { name: forge-dashboard-html, namespace: forge }
 data:
   index.html: |
-    <!doctype html><html><head><meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>FORGE</title><style>
-    body{margin:0;background:#0a0e0d;color:#e9efeb;font-family:-apple-system,Segoe UI,Roboto,sans-serif;
-    display:grid;place-items:center;min-height:100vh;text-align:center}
-    .m{width:34px;height:34px;border-radius:9px;margin:0 auto 18px;
-    background:linear-gradient(140deg,#34d399,#1d9e75);box-shadow:0 8px 24px rgba(29,158,117,.4)}
-    h1{font-size:34px;letter-spacing:-.02em;margin:0}.s{color:#94a39b;margin-top:10px}
-    .b{margin-top:18px;display:inline-block;font-size:13px;color:#34d399;border:1px solid #1d9e7555;
-    border-radius:100px;padding:6px 14px;background:#1d9e7522}</style></head>
-    <body><div><div class="m"></div><h1>FORGE is running</h1>
-    <p class="s">Your own sovereign AI platform &middot; on your hardware</p>
-    <div class="b">● online</div></div></body></html>
----
-apiVersion: apps/v1
-kind: Deployment
-metadata: { name: forge-dashboard, namespace: forge }
-spec:
-  replicas: 1
-  selector: { matchLabels: { app: forge-dashboard } }
-  template:
-    metadata: { labels: { app: forge-dashboard } }
-    spec:
-      containers:
-        - name: web
-          image: nginx:1.27-alpine
-          ports: [{ containerPort: 80 }]
-          volumeMounts: [{ name: html, mountPath: /usr/share/nginx/html }]
-          resources: { requests: { cpu: 20m, memory: 16Mi }, limits: { cpu: 100m, memory: 32Mi } }
-      volumes:
-        - name: html
-          configMap: { name: forge-dashboard-html }
----
-apiVersion: v1
-kind: Service
-metadata: { name: forge-dashboard, namespace: forge }
-spec:
-  type: NodePort
-  selector: { app: forge-dashboard }
-  ports: [{ port: 80, targetPort: 80, nodePort: 30080 }]
+    <!doctype html><html lang="en"><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1"><title>FORGE</title><style>
+    :root{--bg:#0a0e0d;--card:#11181544;--line:rgba(255,255,255,.08);--txt:#e9efeb;--mut:#94a39b;--acc:#34d399;--acc2:#1d9e75}
+    *{box-sizing:border-box;margin:0}body{background:var(--bg);color:var(--txt);min-height:100vh;
+    font-family:-apple-system,Segoe UI,Roboto,sans-serif;padding:40px 20px}
+    .wrap{max-width:880px;margin:0 auto}.top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+    .m{width:30px;height:30px;border-radius:8px;background:linear-gradient(140deg,var(--acc),var(--acc2));
+    box-shadow:0 6px 18px rgba(29,158,117,.4)}h1{font-size:24px;letter-spacing:-.02em}
+    .sub{color:var(--mut);font-size:14px;margin-bottom:24px}
+    .strip{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:12px 16px;margin-bottom:24px;font-size:14px}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+    .tile{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;
+    text-decoration:none;color:inherit;transition:.16s}.tile:hover{border-color:rgba(255,255,255,.18);transform:translateY(-2px)}
+    .tile.soon{opacity:.55}.ico{font-size:22px}.tn{font-size:17px;font-weight:600;margin:10px 0 4px}
+    .td{font-size:13px;color:var(--mut)}.badge{font-size:11px;color:var(--acc);border:1px solid #1d9e7555;
+    background:#1d9e7522;border-radius:100px;padding:3px 9px;margin-left:auto}
+    .row{display:flex;align-items:center;gap:8px}</style></head>
+    <body><div class="wrap">
+    <div class="top"><div class="m"></div><h1>FORGE</h1></div>
+    <p class="sub">Your sovereign AI platform &middot; on your hardware</p>
+    <div class="strip"><span class="dot"></span><span id="cl">Checking your cluster…</span></div>
+    <div class="grid">
+      <a class="tile" id="neuronai" href="#"><div class="row"><span class="ico">&#9889;</span>
+        <span class="badge">app</span></div><div class="tn">NeuronAI</div>
+        <div class="td">Offline multi-persona AI &middot; chat, RAG, vision</div></a>
+      <div class="tile soon"><div class="row"><span class="ico">&#9993;</span><span class="badge">soon</span></div>
+        <div class="tn">Aegis AI</div><div class="td">Sovereign email &middot; self-hosted mail + AI replies</div></div>
+      <div class="tile soon"><div class="row"><span class="ico">&#128274;</span><span class="badge">soon</span></div>
+        <div class="tn">Cipher</div><div class="td">Apple-Silicon AI workspace</div></div>
+    </div></div>
+    <script>
+    // Reuse the canonical fleet API. Same-origin first; the bundle proxies /api to a node bridge.
+    (function(){
+      var host=location.hostname;
+      // NeuronAI tile -> the NeuronAI bridge on this network (port 8001 by convention)
+      document.getElementById('neuronai').href='http://'+host+':3000';
+      fetch('/api/cluster/nodes').then(function(r){return r.json()}).then(function(d){
+        var on=d.online!=null?d.online:(d.nodes||[]).filter(function(n){return n.online}).length;
+        var tot=d.count!=null?d.count:(d.nodes||[]).length;
+        document.getElementById('cl').textContent=on+' of '+tot+' machine'+(tot==1?'':'s')+' online in your cluster';
+      }).catch(function(){
+        document.getElementById('cl').textContent='Cluster online · add machines with the add-node command';
+      });
+    })();
+    </script></body></html>
