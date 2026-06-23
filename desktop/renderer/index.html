@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head>
+<html lang="en" data-theme="light"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FORGE</title>
 <style>
@@ -25,6 +25,21 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
 .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(140deg,var(--acc),var(--acc2));box-shadow:0 6px 18px rgba(29,158,117,.4)}
 .brand{font-weight:650;letter-spacing:-.01em;font-size:16px}
 .bar .sub{color:var(--mut);font-size:13px}
+.bar .sub a.cf{color:var(--acc);text-decoration:none;-webkit-app-region:no-drag}
+.bar .sub a.cf:hover{text-decoration:underline}
+.mnav{display:flex;gap:6px;margin:2px 0 6px}
+.mtab{-webkit-app-region:no-drag;background:none;border:1px solid var(--line);border-radius:9px;color:var(--mut);font-size:13px;font-weight:600;padding:7px 14px;cursor:pointer}
+.mtab.active{color:var(--txt);border-color:var(--acc);background:var(--acc-soft)}
+.hs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+@media(max-width:760px){.hs{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.panel h3{font-size:15px;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.panel .psub{font-size:12px;color:var(--mut);margin-bottom:12px}
+.row2{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13.5px}
+.row2 .ic{width:18px;text-align:center}.row2 .rl{flex:1}.row2 .rv{color:var(--mut);font-size:12.5px;text-align:right}
+.ok{color:var(--green)} .warn{color:#e0a426} .bad{color:var(--red)}
+.gauge{height:8px;border-radius:5px;background:rgba(128,128,128,.18);overflow:hidden;margin:2px 0 6px}
+.gauge>i{display:block;height:100%;border-radius:5px}
 .spacer{flex:1}
 .btn{-webkit-app-region:no-drag;font-size:13px;padding:7px 13px;border:1px solid var(--line2);border-radius:9px;color:var(--txt);background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .btn:hover{border-color:var(--acc);background:var(--acc-soft)}
@@ -78,7 +93,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
   <div class="bar">
     <div class="mark"></div>
     <div><div class="brand">FORGE</div></div>
-    <span class="sub">— your sovereign cluster</span>
+    <span class="sub">— your sovereign cluster · <a class="cf" href="https://collab-foundry.com.au" target="_blank" rel="noopener">Collab-Foundry</a></span>
     <div class="spacer"></div>
     <button class="btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light / dark">☀️</button>
     <button class="btn" onclick="load()">↻ Refresh</button>
@@ -92,9 +107,16 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
   </div>
 
   <div class="body">
-    <div class="head"><span class="kick">Cluster</span><span class="cnt" id="cnt">—</span></div>
-    <div class="tabs" id="tabs"></div>
-    <div class="grid" id="grid"></div>
+    <div class="mnav">
+      <button class="mtab active" id="mt-cluster" onclick="setView('cluster')">Cluster</button>
+      <button class="mtab" id="mt-health" onclick="setView('health')">Health &amp; Security</button>
+    </div>
+    <div id="view-cluster">
+      <div class="head"><span class="kick">Cluster</span><span class="cnt" id="cnt">—</span></div>
+      <div class="tabs" id="tabs"></div>
+      <div class="grid" id="grid"></div>
+    </div>
+    <div id="view-health" style="display:none"></div>
   </div>
 </div>
 
@@ -113,6 +135,15 @@ applyTheme(localStorage.getItem('forge_theme')||'light');
 const API = localStorage.getItem('forge_api') || 'http://localhost:8001';
 const ORDER = ['AEGIS AI','NeuronAI','Cipher'];
 let active = 'AEGIS AI';
+let view = 'cluster';
+function setView(v){
+  view=v;
+  document.getElementById('view-cluster').style.display = v==='cluster'?'':'none';
+  document.getElementById('view-health').style.display = v==='health'?'':'none';
+  document.getElementById('mt-cluster').classList.toggle('active', v==='cluster');
+  document.getElementById('mt-health').classList.toggle('active', v==='health');
+  if(v==='health') renderHealth(window._d||BAKED);
+}
 // baked snapshot so the app shows your real cluster even offline / on first paint
 const BAKED = {"count":3,"online":3,"nodes":[{"name":"olympus","role":"control-plane","ai_system":"FORGE","model":"Mini PC","online":true,"lan_ip":"10.0.0.10","os":"Ubuntu 24.04","hardware":{"cpu":{"model":"Intel Core i7","cores":8,"threads":16},"ram":{"total_gb":64,"type":"DDR4 ECC"},"storage":{"total_tb":3.5,"drives":6},"accelerators":[{"name":"Coral TPU","perf":"4 TOPS","use_case":"vision"}]}},{"name":"hermes","role":"worker","ai_system":"FORGE","model":"Raspberry Pi 5","online":true,"lan_ip":"10.0.0.21","os":"Raspberry Pi OS","hardware":{"cpu":{"model":"ARM Cortex-A76","cores":4,"threads":4},"ram":{"total_gb":8,"type":"LPDDR4X"},"storage":{"total_tb":0.5,"drives":1}}},{"name":"talos","role":"worker","ai_system":"FORGE","model":"Raspberry Pi 5","online":true,"lan_ip":"10.0.0.22","os":"Raspberry Pi OS","hardware":{"cpu":{"model":"ARM Cortex-A76","cores":4,"threads":4},"ram":{"total_gb":8,"type":"LPDDR4X"},"storage":{"total_tb":0.06,"drives":1},"accelerators":[{"name":"Hailo NPU","perf":"40 TOPS","use_case":"edge AI"}]}}]};
 
@@ -151,6 +182,41 @@ function render(d){
   const mine = nodes.filter(n=>(n.ai_system||'Unassigned')===active);
   document.getElementById('grid').innerHTML = mine.length? mine.map(nodeCard).join('') : '<p style="color:var(--mut)">No machine in this group.</p>';
   window._d=d;
+  if(view==='health') renderHealth(d);
+}
+
+function renderHealth(d){
+  const nodes=(d&&d.nodes)||[];
+  const real=nodes.filter(n=>(n.role||'')!=='planned');           // planned slots aren't "down"
+  const online=real.filter(n=>n.online);
+  const cp=real.find(n=>(n.role||'').includes('control-plane'));
+  const workers=real.filter(n=>(n.role||'')==='worker');
+  const wOn=workers.filter(w=>w.online).length;
+  const accel=online.reduce((a,n)=>a+(((n.hardware||{}).accelerators)||[]).length,0);
+  const pct=real.length?Math.round(online.length/real.length*100):0;
+  const down=real.filter(n=>!n.online);
+  const hasGateway=nodes.some(n=>n.name==='gateway');
+  const multiCP=real.filter(n=>(n.role||'').includes('control-plane')).length>1;
+  const row=(ic,cls,label,val)=>`<div class="row2"><span class="ic ${cls}">${ic}</span><span class="rl">${label}</span><span class="rv">${val}</span></div>`;
+  document.getElementById('view-health').innerHTML = `
+   <div class="hs">
+    <div class="panel">
+      <h3>🩺 Health</h3><div class="psub">${online.length} of ${real.length} active machines online</div>
+      <div class="gauge"><i style="width:${pct}%;background:${pct>=100?'var(--green)':pct>=60?'#e0a426':'var(--red)'}"></i></div>
+      ${row(cp&&cp.online?'✅':'⛔', cp&&cp.online?'ok':'bad','Control plane', cp?cp.name+(cp.online?' · online':' · DOWN'):'none')}
+      ${row(wOn===workers.length?'✅':'⚠️', wOn===workers.length?'ok':'warn','Workers', wOn+' / '+workers.length+' online')}
+      ${row('⚡','ok','Compute accelerators', accel+' across online nodes')}
+      ${down.length? row('⚠️','warn','Unexpectedly offline', down.map(n=>n.name).join(', ')) : row('✅','ok','No unexpected outages','all active nodes up')}
+    </div>
+    <div class="panel">
+      <h3>🛡️ Security</h3><div class="psub">posture of your sovereign cluster</div>
+      ${row('🔒','ok','Private mesh','Tailscale / WireGuard (encrypted)')}
+      ${row('🌐','ok','Public surface', hasGateway?'gateway only':'none exposed')}
+      ${row(multiCP?'✅':'⚠️', multiCP?'ok':'warn','Control-plane HA', multiCP?'redundant':'single — add a 2nd for HA')}
+      ${row('🔑','ok','Secrets','sealed-secrets · none in git')}
+      ${row('📜','ok','TLS','cert-manager + Lets Encrypt')}
+    </div>
+   </div>`;
 }
 async function load(){
   try{ const r=await fetch(API+'/api/cluster/nodes'); render(await r.json()); }
@@ -163,5 +229,5 @@ function openAdd(){
 }
 function closeAdd(){ document.getElementById('addModal').classList.remove('on'); }
 document.getElementById('t-neuron').onclick=e=>{e.preventDefault(); location.href=API.replace(':8001',':3000');};
-render(BAKED); load(); setInterval(()=>{ if(!document.hidden) load(); }, 8000);
+render(BAKED); load(); if(location.hash==='#health') setView('health'); setInterval(()=>{ if(!document.hidden) load(); }, 8000);
 </script></body></html>

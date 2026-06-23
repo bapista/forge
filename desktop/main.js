@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 function createWindow() {
   const win = new BrowserWindow({
@@ -8,6 +8,8 @@ function createWindow() {
     autoHideMenuBar: true, titleBarStyle: 'hiddenInset',
     webPreferences: { contextIsolation: true },
   });
+  // open external links (e.g. collab-foundry.com.au) in the default browser, not in-app
+  win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 app.whenReady().then(() => {
