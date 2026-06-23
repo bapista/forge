@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FORGE</title>
+<style>
+:root{
+  --bg:#0a0e0d; --bg2:#0c1110; --card:#111815; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --txt:#e9efeb; --mut:#94a39b; --faint:#6c7a72; --acc:#34d399; --acc2:#1d9e75; --acc-soft:rgba(29,158,117,.14);
+  --blue:#60a5fa; --green:#34d399; --purple:#c084fc; --grey:#8a958f; --red:#f87171;
+  --f:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--f);-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(60vw 40vh at 80% -10%,rgba(29,158,117,.10),transparent 60%)}
+.app{display:flex;flex-direction:column;height:100vh}
+/* titlebar */
+.bar{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--line);-webkit-app-region:drag}
+.mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(140deg,var(--acc),var(--acc2));box-shadow:0 6px 18px rgba(29,158,117,.4)}
+.brand{font-weight:650;letter-spacing:-.01em;font-size:16px}
+.bar .sub{color:var(--mut);font-size:13px}
+.spacer{flex:1}
+.btn{-webkit-app-region:no-drag;font-size:13px;padding:7px 13px;border:1px solid var(--line2);border-radius:9px;color:var(--txt);background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--acc);background:var(--acc-soft)}
+.btn.primary{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#06120d;border:none;font-weight:600}
+/* tiles */
+.tiles{display:flex;gap:12px;padding:18px 22px 6px;flex-wrap:wrap}
+.tile{-webkit-app-region:no-drag;flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 16px;cursor:pointer;transition:.15s;text-decoration:none;color:inherit}
+.tile:hover{border-color:var(--line2);transform:translateY(-2px)}
+.tile.soon{opacity:.5;cursor:default}
+.tile .ico{font-size:18px}.tile h3{font-size:15px;margin:8px 0 2px}.tile p{font-size:12px;color:var(--mut)}
+.tile .badge{float:right;font-size:10px;color:var(--acc);border:1px solid #1d9e7555;background:#1d9e7522;border-radius:100px;padding:2px 8px}
+/* cluster */
+.body{flex:1;overflow-y:auto;padding:10px 22px 24px}
+.head{display:flex;align-items:center;gap:10px;margin:14px 2px 12px}
+.kick{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);font-weight:600}
+.head .cnt{margin-left:auto;font-size:13px;color:var(--mut)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+.tab{-webkit-app-region:no-drag;background:none;border:none;color:var(--mut);font-size:13px;font-weight:600;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent}
+.tab.active{color:var(--txt);border-bottom-color:var(--acc)}
+.tab .n{font-size:11px;opacity:.6;margin-left:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.node{background:linear-gradient(180deg,rgba(255,255,255,.025),transparent);border:1px solid var(--line);border-radius:14px;padding:16px;border-top:3px solid var(--grey)}
+.node.r-control-plane{border-top-color:var(--blue)} .node.r-worker{border-top-color:var(--green)}
+.node.r-dev{border-top-color:var(--purple)} .node.off{opacity:.5}
+.nh{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)} .dot.off{background:var(--faint);box-shadow:none}
+.nh .nm{font-weight:650;letter-spacing:-.01em}
+.rb{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);border:1px solid var(--line2);border-radius:6px;padding:2px 7px}
+.nh .mdl{margin-left:auto;font-size:12px;color:var(--faint)}
+.specs{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.spec{display:flex;gap:9px}.spec .si{opacity:.5;font-size:14px}
+.spec .sl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
+.spec .sv{font-size:13px}
+.accel{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11px;border:1px solid var(--acc-soft);background:var(--acc-soft);border-radius:7px;padding:3px 8px;color:var(--acc)}
+.rambar{margin-top:11px;border-top:1px solid var(--line);padding-top:9px}
+.rambar .lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--mut)}
+.track{height:6px;border-radius:4px;background:rgba(255,255,255,.07);margin-top:5px;overflow:hidden}
+.fill{height:100%;border-radius:4px;background:var(--green)}
+.foot{margin-top:11px;border-top:1px solid var(--line);padding-top:8px;font-size:11px;color:var(--faint)}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50}
+.modal.on{display:flex}
+.sheet{background:var(--bg2);border:1px solid var(--line2);border-radius:16px;padding:24px;max-width:560px;width:90%}
+.sheet h2{font-size:18px;margin-bottom:6px}.sheet p{color:var(--mut);font-size:13px;margin-bottom:14px}
+.code{background:#06100c;border:1px solid var(--line);border-radius:10px;padding:13px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--acc);white-space:pre-wrap;word-break:break-all}
+.x{float:right;cursor:pointer;color:var(--mut);font-size:18px;-webkit-app-region:no-drag}
+</style></head>
+<body><div class="app">
+
+  <div class="bar">
+    <div class="mark"></div>
+    <div><div class="brand">FORGE</div></div>
+    <span class="sub">— your sovereign cluster</span>
+    <div class="spacer"></div>
+    <button class="btn" onclick="load()">↻ Refresh</button>
+    <button class="btn primary" onclick="openAdd()">＋ Add node</button>
+  </div>
+
+  <div class="tiles">
+    <a class="tile" id="t-neuron" href="#"><span class="badge">app</span><div class="ico">⚡</div><h3>NeuronAI</h3><p>Offline multi-persona AI</p></a>
+    <div class="tile soon"><span class="badge">soon</span><div class="ico">✉️</div><h3>Aegis AI</h3><p>Sovereign mail + AI replies</p></div>
+    <div class="tile soon"><span class="badge">soon</span><div class="ico">🔒</div><h3>Cipher</h3><p>Apple-Silicon AI workspace</p></div>
+  </div>
+
+  <div class="body">
+    <div class="head"><span class="kick">Cluster</span><span class="cnt" id="cnt">—</span></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="modal" id="addModal"><div class="sheet">
+  <span class="x" onclick="closeAdd()">✕</span>
+  <h2>Add a machine</h2>
+  <p>Run this on any Linux box or Raspberry Pi to join your cluster over the Tailscale mesh:</p>
+  <div class="code" id="addCmd"></div>
+</div></div>
+
+<script>
+// ---- config: where /api/cluster/nodes lives (the NeuronAI bridge / olympus) ----
+const API = localStorage.getItem('forge_api') || 'http://localhost:8001';
+const ORDER = ['AEGIS AI','NeuronAI','Cipher'];
+let active = 'AEGIS AI';
+// baked snapshot so the app shows your real cluster even offline / on first paint
+const BAKED = {"count":3,"online":3,"nodes":[{"name":"olympus","role":"control-plane","ai_system":"FORGE","model":"Mini PC","online":true,"lan_ip":"10.0.0.10","os":"Ubuntu 24.04","hardware":{"cpu":{"model":"Intel Core i7","cores":8,"threads":16},"ram":{"total_gb":64,"type":"DDR4 ECC"},"storage":{"total_tb":3.5,"drives":6},"accelerators":[{"name":"Coral TPU","perf":"4 TOPS","use_case":"vision"}]}},{"name":"hermes","role":"worker","ai_system":"FORGE","model":"Raspberry Pi 5","online":true,"lan_ip":"10.0.0.21","os":"Raspberry Pi OS","hardware":{"cpu":{"model":"ARM Cortex-A76","cores":4,"threads":4},"ram":{"total_gb":8,"type":"LPDDR4X"},"storage":{"total_tb":0.5,"drives":1}}},{"name":"talos","role":"worker","ai_system":"FORGE","model":"Raspberry Pi 5","online":true,"lan_ip":"10.0.0.22","os":"Raspberry Pi OS","hardware":{"cpu":{"model":"ARM Cortex-A76","cores":4,"threads":4},"ram":{"total_gb":8,"type":"LPDDR4X"},"storage":{"total_tb":0.06,"drives":1},"accelerators":[{"name":"Hailo NPU","perf":"40 TOPS","use_case":"edge AI"}]}}]};
+
+const ICON={cpu:'🖥️',ram:'🧠',storage:'💾',net:'🌐'};
+function fmtStore(s){ if(!s||s.total_tb==null) return '—'; return s.total_tb<0.1? Math.round(s.total_tb*1000)+' GB' : s.total_tb+' TB'; }
+
+function nodeCard(n){
+  const hw=n.hardware||{}, cpu=hw.cpu||{}, ram=hw.ram||{}, acc=hw.accelerators||[], live=n.live;
+  const ramPct = live&&live.ram_used_gb!=null&&live.ram_total_gb ? Math.min(100,Math.round(live.ram_used_gb/live.ram_total_gb*100)) : null;
+  const rcls = 'r-'+(n.role||'').replace(/[^a-z]/gi,'-').toLowerCase();
+  return `<div class="node ${rcls} ${n.online?'':'off'}">
+    <div class="nh"><span class="dot ${n.online?'':'off'}"></span><span class="nm">${n.name}</span>
+      <span class="rb">${n.role||'—'}</span><span class="mdl">${n.model||''}</span></div>
+    <div class="specs">
+      <div class="spec"><span class="si">${ICON.cpu}</span><div><div class="sl">CPU</div><div class="sv">${cpu.model||'—'}${cpu.cores?` · ${cpu.cores}C/${cpu.threads||cpu.cores}T`:''}</div></div></div>
+      <div class="spec"><span class="si">${ICON.ram}</span><div><div class="sl">RAM</div><div class="sv">${ram.total_gb?ram.total_gb+' GB':'—'}${ram.type?` · ${ram.type}`:''}</div></div></div>
+      <div class="spec"><span class="si">${ICON.storage}</span><div><div class="sl">Storage</div><div class="sv">${fmtStore(hw.storage)}</div></div></div>
+      <div class="spec"><span class="si">${ICON.net}</span><div><div class="sl">Network</div><div class="sv">${n.lan_ip||'—'}</div></div></div>
+    </div>
+    ${acc.length?`<div class="accel">${acc.map(a=>`<span class="chip" title="${a.use_case||''}">⚡ ${a.name}${a.perf?` · ${a.perf}`:''}</span>`).join('')}</div>`:''}
+    ${ramPct!=null?`<div class="rambar"><div class="lbl"><span>RAM live</span><span>${live.ram_used_gb?.toFixed(1)} / ${live.ram_total_gb?.toFixed(1)} GB · ${ramPct}%</span></div><div class="track"><div class="fill" style="width:${ramPct}%;background:${ramPct>85?'var(--red)':ramPct>65?'#fbbf24':'var(--green)'}"></div></div></div>`:''}
+    <div class="foot">${hw.os||n.os||''}${n.ai_system?` · ${n.ai_system}`:''}</div>
+  </div>`;
+}
+
+function render(d){
+  const nodes=d.nodes||[];
+  document.getElementById('cnt').textContent = `${d.online??nodes.filter(n=>n.online).length} of ${d.count??nodes.length} nodes online`;
+  const systems = Array.from(new Set(nodes.map(n=>n.ai_system||'Unassigned')))
+    .sort((a,b)=>((ORDER.indexOf(a)+1||99)-(ORDER.indexOf(b)+1||99))||a.localeCompare(b));
+  if(!systems.includes(active)) active=systems[0]||'';
+  document.getElementById('tabs').innerHTML = systems.map(s=>{
+    const c=nodes.filter(n=>(n.ai_system||'Unassigned')===s).length;
+    return `<button class="tab ${s===active?'active':''}" onclick="active='${s.replace(/'/g,"")}';render(window._d)">${s}<span class="n">${c}</span></button>`;
+  }).join('');
+  const mine = nodes.filter(n=>(n.ai_system||'Unassigned')===active);
+  document.getElementById('grid').innerHTML = mine.length? mine.map(nodeCard).join('') : '<p style="color:var(--mut)">No machine in this group.</p>';
+  window._d=d;
+}
+async function load(){
+  try{ const r=await fetch(API+'/api/cluster/nodes'); render(await r.json()); }
+  catch(e){ render(BAKED); }
+}
+function openAdd(){
+  document.getElementById('addCmd').textContent =
+    'curl -sfL https://raw.githubusercontent.com/bapista/forge/main/add-node.sh | \\\n  FORGE_SERVER=<olympus-tailscale-ip> FORGE_TOKEN=<node-token> sudo sh';
+  document.getElementById('addModal').classList.add('on');
+}
+function closeAdd(){ document.getElementById('addModal').classList.remove('on'); }
+document.getElementById('t-neuron').onclick=e=>{e.preventDefault(); location.href=API.replace(':8001',':3000');};
+render(BAKED); load(); setInterval(()=>{ if(!document.hidden) load(); }, 8000);
+</script></body></html>
