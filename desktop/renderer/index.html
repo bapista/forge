@@ -9,6 +9,13 @@
   --blue:#60a5fa; --green:#34d399; --purple:#c084fc; --grey:#8a958f; --red:#f87171;
   --f:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
+html[data-theme="light"]{
+  --bg:#f5f8f6; --bg2:#ffffff; --card:#ffffff; --line:rgba(0,0,0,.09); --line2:rgba(0,0,0,.16);
+  --txt:#0e1a15; --mut:#5a6b63; --faint:#8a9890; --acc-soft:rgba(29,158,117,.12);
+}
+html[data-theme="light"] .node{background:linear-gradient(180deg,rgba(0,0,0,.015),transparent)}
+html[data-theme="light"] .btn.primary,html[data-theme="light"] .tile .badge{color:#06120d}
+html[data-theme="light"] .code{background:#eef4f0;color:#137a55}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--txt);font-family:var(--f);-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
 body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(60vw 40vh at 80% -10%,rgba(29,158,117,.10),transparent 60%)}
@@ -73,6 +80,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
     <div><div class="brand">FORGE</div></div>
     <span class="sub">— your sovereign cluster</span>
     <div class="spacer"></div>
+    <button class="btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light / dark">☀️</button>
     <button class="btn" onclick="load()">↻ Refresh</button>
     <button class="btn primary" onclick="openAdd()">＋ Add node</button>
   </div>
@@ -99,6 +107,9 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
 
 <script>
 // ---- config: where /api/cluster/nodes lives (the NeuronAI bridge / olympus) ----
+function applyTheme(t){ document.documentElement.setAttribute('data-theme',t); localStorage.setItem('forge_theme',t); var b=document.getElementById('themeBtn'); if(b) b.textContent = t==='light'?'🌙':'☀️'; }
+function toggleTheme(){ applyTheme((localStorage.getItem('forge_theme')||'light')==='light'?'dark':'light'); }
+applyTheme(localStorage.getItem('forge_theme')||'light');
 const API = localStorage.getItem('forge_api') || 'http://localhost:8001';
 const ORDER = ['AEGIS AI','NeuronAI','Cipher'];
 let active = 'AEGIS AI';

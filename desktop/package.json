@@ -2,18 +2,42 @@
   "name": "forge-desktop",
   "productName": "FORGE",
   "version": "0.1.0",
-  "description": "FORGE — your sovereign AI cluster, as a one-click desktop app",
+  "description": "FORGE \u2014 your sovereign AI cluster, as a one-click desktop app",
   "main": "main.js",
-  "author": "Bapista Khan",
+  "author": {
+    "name": "Bapista Khan",
+    "email": "bapistakhan@gmail.com"
+  },
   "license": "MIT",
-  "scripts": { "start": "electron .", "dist": "electron-builder" },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
   "build": {
     "appId": "au.com.collabfoundry.forge",
     "productName": "FORGE",
-    "files": ["main.js", "renderer/**/*"],
-    "linux": { "target": ["AppImage", "deb"], "category": "Network" },
-    "mac": { "target": "dmg" },
-    "win": { "target": "nsis" }
+    "files": [
+      "main.js",
+      "renderer/**/*"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Network",
+      "maintainer": "Bapista Khan <bapistakhan@gmail.com>"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    }
   },
-  "devDependencies": { "electron": "^33.0.0", "electron-builder": "^25.0.0" }
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "homepage": "https://collab-foundry.com.au"
 }
