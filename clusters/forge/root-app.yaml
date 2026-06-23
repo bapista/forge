@@ -1,5 +1,5 @@
-# App-of-apps: Argo CD watches this repo and reconciles everything under apps/.
-# Push to main -> cluster converges. That is GitOps.
+# App-of-apps: Argo CD watches clusters/forge/apps/ and reconciles every
+# platform component + workload defined there. Push to main -> cluster converges.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -10,10 +10,8 @@ spec:
   source:
     repoURL: https://github.com/bapista/forge.git
     targetRevision: main
-    path: apps
+    path: clusters/forge/apps
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+    automated: { prune: true, selfHeal: true }

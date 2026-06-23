@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: podinfo
+  namespace: demo
+  annotations: { cert-manager.io/cluster-issuer: letsencrypt-prod }
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [demo.collab-foundry.com.au]
+      secretName: podinfo-tls
+  rules:
+    - host: demo.collab-foundry.com.au
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: podinfo, port: { number: 80 } } }

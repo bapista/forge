@@ -5,8 +5,8 @@ provision:   ## Layer 1 — provision K3s on all nodes (Ansible)
 	cd infra/ansible && ansible-playbook -i inventory.ini site.yml
 bootstrap:   ## Layer 2 — install Argo CD + the root app-of-apps
 	kubectl apply -k clusters/forge/bootstrap
-	kubectl apply -f clusters/forge/apps/root-app.yaml
-diff:        ## Show what GitOps would change
-	kubectl diff -k apps/podinfo || true
-lint:        ## Lint manifests
-	kubectl apply --dry-run=client -k apps/podinfo
+	kubectl apply -f clusters/forge/root-app.yaml
+diff:        ## Preview what GitOps would change for the demo workload
+	kubectl diff -k workloads/podinfo || true
+lint:        ## Render manifests client-side (what CI checks)
+	kubectl apply --dry-run=client -k workloads/podinfo

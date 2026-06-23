@@ -1,5 +1,10 @@
 # FORGE — a sovereign, self-hosted K3s platform
 
+[![validate](https://github.com/bapista/forge/actions/workflows/ci.yml/badge.svg)](https://github.com/bapista/forge/actions/workflows/ci.yml)
+&nbsp;![K3s](https://img.shields.io/badge/Kubernetes-K3s-326CE5?logo=kubernetes&logoColor=white)
+&nbsp;![GitOps](https://img.shields.io/badge/GitOps-Argo%20CD-EF7B4D?logo=argo&logoColor=white)
+&nbsp;![License](https://img.shields.io/badge/License-MIT-green)
+
 A five-node, GitOps-managed Kubernetes platform running entirely on my own hardware — Raspberry Pis,
 small x86 compute, and a hardened public gateway, linked over a private mesh. Built to run sovereign,
 offline-first AI services with **no hyperscaler dependency**, and engineered the way a production
@@ -51,12 +56,22 @@ nodes and is *exposed* to the cluster. This is a deliberate platform decision, n
 ## Repository layout
 
 ```
-infra/ansible/          Layer 1 — IaC: provision K3s across all nodes
-clusters/forge/         Layer 2 — GitOps: Argo CD bootstrap + app-of-apps
-apps/                   Workloads reconciled by Argo CD (start: podinfo demo)
-docs/architecture.md    Topology + design decisions
-Makefile                provision / bootstrap / diff / lint
+infra/ansible/              Layer 1 — IaC: provision K3s across all nodes
+clusters/forge/
+  bootstrap/                Argo CD install
+  root-app.yaml             app-of-apps entrypoint
+  apps/                     Argo CD Applications (one per component/workload)
+platform/cert-manager/      Let's Encrypt ClusterIssuer
+workloads/podinfo/          Demo workload + Ingress + TLS (reconciled by GitOps)
+.github/workflows/ci.yml    Layer 6 — CI: manifest validation on every push/PR
+docs/architecture.md        Topology + design decisions
+Makefile                    provision / bootstrap / diff / lint
 ```
+
+The app-of-apps (`clusters/forge/root-app.yaml`) deploys, in ordered sync-waves:
+**cert-manager** + **ingress-nginx** + **sealed-secrets** + **kube-prometheus-stack** → the
+**Let's Encrypt ClusterIssuer** → the **podinfo** workload (served over HTTPS at
+`demo.collab-foundry.com.au`). All declared as Helm/Kustomize Argo CD Applications — *no manual installs.*
 
 ## Quick start
 
