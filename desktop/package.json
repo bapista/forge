@@ -1,7 +1,7 @@
 {
   "name": "forge-desktop",
   "productName": "FORGE",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "FORGE \u2014 your sovereign AI cluster, as a one-click desktop app",
   "main": "main.js",
   "author": {

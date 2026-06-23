@@ -26,7 +26,7 @@ from pathlib import Path
 PERSONAS: dict[str, dict] = {
     "tuxedo":  {"persona": "NeuronAI", "base": "http://tuxedo.local:8001",  "chat": "/api/chat", "shape": "messages"},
     "olympus": {"persona": "Aegis AI", "base": "http://olympus:8000", "chat": "/api/chat", "shape": "messages"},  # Aegis bridge (live)
-    "mac":     {"persona": "Cipher",   "base": "http://mac.local:8000",     "chat": "/api/chat", "shape": "messages"},
+    "mac":     {"persona": "Cipher",   "base": "http://cipher:8000",        "chat": "/api/chat", "shape": "messages"},  # Mac, via Tailscale serve
 }
 DEFAULT_NODE = "forge"   # FORGE answers with its OWN brain by default; personas are upgrades
 
