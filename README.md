@@ -12,30 +12,31 @@ device. Add more machines when you want more power.
 > Sovereign by default: your data, your models, your machines. Part of
 > [Collab-Foundry](https://collab-foundry.com.au) — ethical, humanity-first technology for everyone.
 
-## Get started — one machine, one command
+## Get started — run the SAME command on every machine
 
-On a Linux box or Raspberry Pi:
+On each Linux box or Raspberry Pi on the same Wi-Fi / LAN:
 
 ```bash
 curl -sfL https://raw.githubusercontent.com/bapista/forge/main/install.sh | sudo sh
 ```
 *(A friendlier `get.collab-foundry.com.au` shortcut is on the way.)*
 
-That's it. FORGE installs itself and prints a link like `http://192.168.1.50:30888`.
-**Open that link from any device** — your Mac, your phone, your laptop — and FORGE is there.
+**That's it — FORGE self-organizes.** The machines discover each other over your network (mDNS),
+**automatically elect one control-plane**, and the rest auto-join. No IP to copy, no token to paste.
+The control-plane prints a link like `http://192.168.1.50:30888` — **open it from any device** (Mac,
+phone, laptop). See [docs/ORGANIC.md](docs/ORGANIC.md) for how the election works.
 
 > Clients can be **anything** (Mac, Windows, Linux, phone). Only the *cluster* machines need to be
 > Linux/Pi — they do the work; everything else just connects.
 
-## Grow it — add a machine when you want more
+## Grow it — just run it again
 
-Got a second Pi or mini-PC? The first machine prints an `add-node` command. Run it on the new box:
+Add a machine later? Run the **same** installer on it — it auto-joins the existing cluster. Nothing to copy.
 
+**Across different networks** (not the same LAN)? Join over Tailscale with explicit details:
 ```bash
-curl -sfL https://raw.githubusercontent.com/bapista/forge/main/add-node.sh | FORGE_SERVER=<ip> FORGE_TOKEN=<token> sudo sh
+curl -sfL https://raw.githubusercontent.com/bapista/forge/main/add-node.sh | FORGE_SERVER=<tailscale-ip> FORGE_TOKEN=<token> sudo sh
 ```
-
-The new machine joins your cluster and shares the load. No reconfiguration, no downtime.
 
 ## Why FORGE
 
