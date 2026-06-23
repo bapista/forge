@@ -3,7 +3,7 @@
 [![validate](https://github.com/bapista/forge/actions/workflows/ci.yml/badge.svg)](https://github.com/bapista/forge/actions/workflows/ci.yml)
 &nbsp;![Runs on](https://img.shields.io/badge/runs%20on-Linux%20%26%20Raspberry%20Pi-326CE5)
 &nbsp;![No cloud](https://img.shields.io/badge/cloud-none-1d9e75)
-&nbsp;![License](https://img.shields.io/badge/License-MIT-green)
+&nbsp;![License](https://img.shields.io/badge/License-AGPL--3.0-green)
 
 Turn a few Linux or Raspberry Pi machines into **your own private AI platform** — on your hardware, in
 your home or office, with **no cloud and no subscription**. One command to start. Open it from any
@@ -43,7 +43,7 @@ curl -sfL https://raw.githubusercontent.com/bapista/forge/main/add-node.sh | FOR
 - **Easy.** One command. No Kubernetes knowledge needed — the complexity is hidden.
 - **Sovereign.** Runs entirely on your machines. No hyperscaler, no data leaving home.
 - **Yours to grow.** Start on one machine; add nodes as you need capacity.
-- **Open.** MIT-licensed; inspect and own every line.
+- **Open & share-alike.** AGPL-3.0 licensed; inspect and own every line — use it freely, but share your contributions back.
 
 ## What's inside
 
@@ -73,4 +73,4 @@ Built by **Bapista Khan** — AI Systems Engineer, Sydney 🇦🇺 —
 as part of [Collab-Foundry](https://collab-foundry.com.au)'s sovereign-AI work (Aegis AI · NeuronAI · Cipher).
 [bapistakhan.com](https://bapistakhan.com) · [LinkedIn](https://www.linkedin.com/in/bapista-khan)
 
-_MIT licensed._
+_AGPL-3.0 licensed — use freely, share contributions back, keep attribution. (Releases v0.1.0–v0.3.0 remain MIT.) See [NOTICE](NOTICE)._

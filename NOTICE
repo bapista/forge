@@ -1,0 +1,25 @@
+FORGE
+Copyright (c) 2026 Bapista Khan / Collab-Foundry
+
+This program is free software: you can use, study, modify, and redistribute it
+under the terms of the GNU Affero General Public License v3.0 or later
+(AGPL-3.0-or-later), as published by the Free Software Foundation. See LICENSE.
+
+What this means in plain language:
+  - Anyone may use, run, modify, and even sell FORGE.
+  - BUT if you distribute it, OR run a modified version as a network/hosted
+    service, you must make your COMPLETE corresponding source code available to
+    your users under this same AGPL-3.0 license (share-alike).
+  - You must keep this copyright notice and attribution to Bapista Khan /
+    Collab-Foundry intact.
+
+In short: use it freely, but share your contributions back — you cannot take
+FORGE private.
+
+Prior releases v0.1.0–v0.3.0 were published under the MIT License; those tagged
+versions remain available under MIT. All development from this point forward is
+licensed under AGPL-3.0-or-later.
+
+FORGE is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
