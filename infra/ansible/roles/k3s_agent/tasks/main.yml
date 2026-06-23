@@ -1,0 +1,9 @@
+---
+# Join an agent node to the control plane.
+- name: Install K3s agent
+  ansible.builtin.shell: |
+    curl -sfL https://get.k3s.io | \
+      K3S_URL="https://{{ hostvars[groups['server'][0]].ansible_host }}:6443" \
+      K3S_TOKEN="{{ k3s_token }}" sh -
+  args:
+    creates: /usr/local/bin/k3s

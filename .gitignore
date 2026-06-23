@@ -1,0 +1,16 @@
+# Secrets & state — NEVER commit to a public repo
+*.key
+*.pem
+*.crt
+kubeconfig
+*kubeconfig*
+.env
+.env.*
+secrets.yaml
+*-secret.yaml
+sealed-secrets-key*
+inventory.ini
+ansible/inventory.ini
+*.retry
+__pycache__/
+.DS_Store

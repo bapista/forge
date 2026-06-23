@@ -1,0 +1,13 @@
+---
+# Layer 1 — Infrastructure as Code: provision a K3s cluster declaratively.
+- name: K3s control-plane
+  hosts: server
+  become: true
+  roles:
+    - k3s_server
+
+- name: K3s agents
+  hosts: agents
+  become: true
+  roles:
+    - k3s_agent

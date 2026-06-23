@@ -1,0 +1,14 @@
+---
+# Install the K3s control plane. Token is read from the environment /
+# a vault — never hard-coded (see SECURITY in README).
+- name: Install K3s server
+  ansible.builtin.shell: |
+    curl -sfL https://get.k3s.io | \
+      INSTALL_K3S_EXEC="server --disable traefik --write-kubeconfig-mode 644" \
+      K3S_TOKEN="{{ k3s_token }}" sh -
+  args:
+    creates: /usr/local/bin/k3s
+
+- name: Wait for node-token
+  ansible.builtin.wait_for:
+    path: /var/lib/rancher/k3s/server/node-token
