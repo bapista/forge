@@ -48,6 +48,18 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
 .tres{white-space:pre-wrap;margin:2px 0 4px}.terr{color:#f6a6a6}.tbad{color:#f6a6a6;margin-top:7px}
 .termin{display:flex;gap:8px;align-items:center;margin-top:10px}
 .tcmd{-webkit-app-region:no-drag;flex:1;background:var(--card);border:1px solid var(--line2);border-radius:9px;color:var(--txt);font-family:ui-monospace,monospace;font-size:13px;padding:9px 12px}
+/* chat */
+.chatlog{height:46vh;overflow-y:auto;padding:6px 2px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:78%;padding:10px 13px;border-radius:13px;font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#06120d}
+.msg.ai{align-self:flex-start;background:var(--card);border:1px solid var(--line)}
+.msg.out{align-self:stretch;max-width:100%;background:#06100c;color:#cfeede;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--line)}
+.msg .who{font-size:11px;color:var(--acc2);font-weight:600;margin-bottom:3px}
+.cmdprop{margin-top:9px;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:10px}
+.cmdprop code{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--acc2);display:block;margin-bottom:8px;white-space:pre-wrap}
+.cmdprop .act{display:flex;gap:8px;align-items:center}
+.cbadge{font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-radius:6px;padding:2px 7px}
+.cbadge.readonly{color:var(--green);border:1px solid #1d9e7555}.cbadge.mutating{color:#e0a426;border:1px solid #e0a42655}.cbadge.destructive{color:var(--red);border:1px solid #f8717155}
 .spacer{flex:1}
 .btn{-webkit-app-region:no-drag;font-size:13px;padding:7px 13px;border:1px solid var(--line2);border-radius:9px;color:var(--txt);background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .btn:hover{border-color:var(--acc);background:var(--acc-soft)}
@@ -117,6 +129,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
   <div class="body">
     <div class="mnav">
       <button class="mtab active" id="mt-cluster" onclick="setView('cluster')">Cluster</button>
+      <button class="mtab" id="mt-chat" onclick="setView('chat')">Chat ✦</button>
       <button class="mtab" id="mt-health" onclick="setView('health')">Health &amp; Security</button>
       <button class="mtab" id="mt-terminal" onclick="setView('terminal')">Terminal</button>
     </div>
@@ -125,6 +138,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
       <div class="tabs" id="tabs"></div>
       <div class="grid" id="grid"></div>
     </div>
+    <div id="view-chat" style="display:none"></div>
     <div id="view-health" style="display:none"></div>
     <div id="view-terminal" style="display:none"></div>
   </div>
@@ -148,12 +162,13 @@ let active = 'AEGIS AI';
 let view = 'cluster';
 function setView(v){
   view=v;
-  ['cluster','health','terminal'].forEach(x=>{
+  ['cluster','chat','health','terminal'].forEach(x=>{
     document.getElementById('view-'+x).style.display = x===v?'':'none';
     document.getElementById('mt-'+x).classList.toggle('active', x===v);
   });
   if(v==='health') renderHealth(window._d||BAKED);
   if(v==='terminal') renderTerminal(window._d||BAKED);
+  if(v==='chat') renderChat(window._d||BAKED);
 }
 function escapeHtml(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function renderTerminal(d){
@@ -189,6 +204,70 @@ async function runCmd(){
   if(r.err) out.innerHTML += `<pre class="tres terr">${escapeHtml(r.err)}</pre>`;
   if(!r.out && !r.err) out.innerHTML += `<div class="tmut">(exit ${r.code})</div>`;
   out.scrollTop=out.scrollHeight;
+}
+
+// ---- FORGE Chat: per-node AI + approve-to-run commands (guarded) ----
+const CHAT_PERSONAS = {
+  tuxedo:  {persona:'NeuronAI', base: API,                                  },
+  mac:     {persona:'Cipher',   base: localStorage.getItem('forge_cipher')||''},
+  olympus: {persona:'Aegis AI', base: localStorage.getItem('forge_aegis')||'' },
+};
+let chatNodeSel='tuxedo';
+function renderChat(){
+  const el=document.getElementById('view-chat');
+  if(!el.dataset.built){
+    el.dataset.built='1';
+    el.innerHTML=`
+      <div class="termbar">
+        <select id="chatNode" class="tin" onchange="chatNodeSel=this.value"></select>
+        <input id="chatUser" class="tin" placeholder="ssh user (for run)" style="width:150px">
+        <span class="tmut" style="align-self:center">Ask in plain language — the AI proposes commands you approve.</span>
+      </div>
+      <div class="chatlog" id="chatLog"></div>
+      <div class="termin"><input id="chatIn" class="tcmd" placeholder="e.g.  is talos healthy?   ·   how do I add my new pi?" onkeydown="if(event.key==='Enter')sendChat()"><button class="btn primary" onclick="sendChat()">Send</button></div>`;
+  }
+  const sel=document.getElementById('chatNode');
+  sel.innerHTML=Object.entries(CHAT_PERSONAS).map(([n,p])=>`<option value="${n}">${p.persona} · ${n}${p.base?'':' (offline)'}</option>`).join('');
+  sel.value=chatNodeSel;
+}
+function nodeIP(node){ const n=((window._d&&window._d.nodes)||[]).find(x=>x.name===node); return n?(n.lan_ip||''):(node==='tuxedo'?'localhost':''); }
+function classifyCmd(c){ c=(c||'').trim().toLowerCase();
+  if(/\brm\s|mkfs|\bdd\s|shutdown|reboot|kubectl\s+delete|>\s*\/dev|\bdrop\s|\bdelete\s/.test(c)) return 'destructive';
+  if(/^(uptime|df|free|top|kubectl get|systemctl status|cat |ls |ip |ping |whoami|hostname)/.test(c)) return 'readonly';
+  return 'mutating'; }
+function detectCmd(t){ let m=t.match(/RUN:\s*(.+)/i); if(m) return m[1].trim();
+  m=t.match(/```(?:bash|sh|shell)?\s*\n?([^\n`][^`]*)```/); return m? m[1].trim().split('\n')[0] : null; }
+function chatBubble(role,html,who){ const log=document.getElementById('chatLog');
+  const div=document.createElement('div'); div.className='msg '+role;
+  div.innerHTML=(who?`<div class="who">${who}</div>`:'')+html; log.appendChild(div); log.scrollTop=1e9; return div; }
+async function sendChat(){
+  const inp=document.getElementById('chatIn'); const text=(inp.value||'').trim(); if(!text) return;
+  const node=chatNodeSel, p=CHAT_PERSONAS[node];
+  chatBubble('user',escapeHtml(text)); inp.value='';
+  if(!p.base){ chatBubble('ai',`<b>${p.persona}</b> on <b>${node}</b> isn't reachable yet${node==='olympus'?' — Aegis bridge pending':node==='mac'?" — set the Mac IP (localStorage forge_cipher)":''}.`,p.persona); return; }
+  const typing=chatBubble('ai','…',p.persona);
+  const sys=`You are ${p.persona}, the AI operator for this FORGE machine (${node}). Answer briefly and plainly for a non-technical operator. When an action needs a shell command, propose exactly ONE command on its own line starting with "RUN:". Never claim you ran it — the operator approves and runs it.`;
+  try{
+    const r=await fetch(p.base+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'system',content:sys},{role:'user',content:text}]})});
+    const d=await r.json(); typing.remove(); renderAIMsg(d.response||d.answer||'(no reply)',node,p.persona);
+  }catch(e){ typing.remove(); chatBubble('ai','('+p.persona+' unreachable: '+escapeHtml(String(e))+')',p.persona); }
+}
+function renderAIMsg(ans,node,persona){
+  const cmd=detectCmd(ans);
+  let html=escapeHtml(cmd? ans.replace(/RUN:\s*.+/i,'').trim() : ans)||'(ok)';
+  if(cmd){ const cls=classifyCmd(cmd);
+    html+=`<div class="cmdprop"><code>${escapeHtml(cmd)}</code><div class="act"><span class="cbadge ${cls}">${cls}</span>`+
+      `<button class="btn primary" onclick='approveRun(${JSON.stringify(cmd)},${JSON.stringify(node)})'>Approve &amp; Run on ${node}</button></div></div>`; }
+  chatBubble('ai',html,persona);
+}
+async function approveRun(cmd,node){
+  if(!window.forge){ chatBubble('out','⚠ Needs the desktop app to run commands.'); return; }
+  if(classifyCmd(cmd)==='destructive' && !confirm('⚠ This looks DESTRUCTIVE:\n\n'+cmd+'\n\nReally run on '+node+'?')) return;
+  const host=nodeIP(node), user=(document.getElementById('chatUser')||{}).value||'';
+  if(!host){ chatBubble('out','No IP known for '+node+'.'); return; }
+  const o=chatBubble('out','$ '+escapeHtml(cmd)+'\n…');
+  const r=await window.forge.run(host,user,cmd);
+  o.textContent='$ '+cmd+'\n'+((r.out||'')+(r.err?('\n'+r.err):'')||('(exit '+r.code+')'));
 }
 // baked snapshot so the app shows your real cluster even offline / on first paint
 const BAKED = {"count":3,"online":3,"nodes":[{"name":"olympus","role":"control-plane","ai_system":"FORGE","model":"Mini PC","online":true,"lan_ip":"10.0.0.10","os":"Ubuntu 24.04","hardware":{"cpu":{"model":"Intel Core i7","cores":8,"threads":16},"ram":{"total_gb":64,"type":"DDR4 ECC"},"storage":{"total_tb":3.5,"drives":6},"accelerators":[{"name":"Coral TPU","perf":"4 TOPS","use_case":"vision"}]}},{"name":"hermes","role":"worker","ai_system":"FORGE","model":"Raspberry Pi 5","online":true,"lan_ip":"10.0.0.21","os":"Raspberry Pi OS","hardware":{"cpu":{"model":"ARM Cortex-A76","cores":4,"threads":4},"ram":{"total_gb":8,"type":"LPDDR4X"},"storage":{"total_tb":0.5,"drives":1}}},{"name":"talos","role":"worker","ai_system":"FORGE","model":"Raspberry Pi 5","online":true,"lan_ip":"10.0.0.22","os":"Raspberry Pi OS","hardware":{"cpu":{"model":"ARM Cortex-A76","cores":4,"threads":4},"ram":{"total_gb":8,"type":"LPDDR4X"},"storage":{"total_tb":0.06,"drives":1},"accelerators":[{"name":"Hailo NPU","perf":"40 TOPS","use_case":"edge AI"}]}}]};
@@ -275,5 +354,5 @@ function openAdd(){
 }
 function closeAdd(){ document.getElementById('addModal').classList.remove('on'); }
 document.getElementById('t-neuron').onclick=e=>{e.preventDefault(); location.href=API.replace(':8001',':3000');};
-render(BAKED); load(); if(location.hash==='#health') setView('health'); if(location.hash==='#terminal') setView('terminal'); setInterval(()=>{ if(!document.hidden) load(); }, 8000);
+render(BAKED); load(); if(location.hash==='#health') setView('health'); if(location.hash==='#terminal') setView('terminal'); if(location.hash==='#chat') setView('chat'); setInterval(()=>{ if(!document.hidden) load(); }, 8000);
 </script></body></html>
