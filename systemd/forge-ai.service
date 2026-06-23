@@ -1,0 +1,24 @@
+[Unit]
+Description=FORGE AI service — the cluster's own brain (chat + memory + self-learning)
+Documentation=https://github.com/bapista/forge
+After=network-online.target
+Wants=network-online.target
+# Ollama serves FORGE's models; start after it when present (ignored if not installed).
+After=ollama.service
+
+[Service]
+Type=simple
+# FORGE picks a chat model sized to the node (see ai/models.yaml). Override per-machine:
+#   sudo systemctl edit forge-ai  ->  [Service] Environment=FORGE_CHAT_MODEL=qwen2.5:7b-instruct
+Environment=FORGE_CHAT_MODEL=qwen2.5:3b-instruct
+Environment=FORGE_OLLAMA=http://localhost:11434
+WorkingDirectory=%h/forge/ai
+ExecStart=/usr/bin/python3 %h/forge/ai/forge_ai_service.py
+Restart=always
+RestartSec=5
+# FORGE looks after itself — restart on crash, but don't thrash on a hard failure.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Install]
+WantedBy=default.target

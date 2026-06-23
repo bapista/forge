@@ -74,16 +74,21 @@ def log(category: str, title: str, body: str = "", signal: float = 0.5,
 def recall(query: str = "", tags: list[str] | None = None, k: int = 5) -> list[dict]:
     """Most relevant lessons (tag overlap + text match + signal), strongest first; bump surfaced."""
     q = (query or "").lower()
+    # significant query words (>3 chars, skip stopwords) — word overlap, not whole-string match
+    _STOP = {"what", "when", "where", "which", "your", "this", "that", "with", "from", "have",
+             "does", "should", "could", "would", "about", "into", "line", "answer", "tell"}
+    qwords = {w.strip("?.,:;!`'\"") for w in q.split() if len(w) > 3} - _STOP
     want = {(t or "").lower() for t in (tags or []) if t}
     with _conn() as c:
         rows = c.execute("SELECT * FROM lessons WHERE active=1 ORDER BY signal DESC, created_at DESC LIMIT 200").fetchall()
         scored = []
         for r in rows:
             tg = set(json.loads(r["tags"] or "[]"))
+            text = (r["title"] + " " + (r["body"] or "")).lower()
             hit_tag = bool(want & tg)
-            hit_txt = bool(q and (q in r["title"].lower() or q in (r["body"] or "").lower()))
-            if hit_tag or hit_txt or not (want or q):
-                scored.append((len(want & tg) * 2 + (1 if hit_txt else 0) + r["signal"], r))
+            word_hits = sum(1 for w in qwords if w in text)   # how many query words land in the lesson
+            if hit_tag or word_hits or not (want or qwords):
+                scored.append((len(want & tg) * 2 + word_hits + r["signal"], r))
         scored.sort(key=lambda x: -x[0])
         top = [r for _, r in scored[:k]]
         for r in top:

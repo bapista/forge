@@ -206,11 +206,17 @@ async function runCmd(){
   if(r.err) out.innerHTML += `<pre class="tres terr">${escapeHtml(r.err)}</pre>`;
   if(!r.out && !r.err) out.innerHTML += `<div class="tmut">(exit ${r.code})</div>`;
   out.scrollTop=out.scrollHeight;
+  forgeLearn(host,cmd,r.code,(r.out||'')+(r.err||''));   // terminal commands also teach FORGE
 }
 
 // ---- FORGE Chat: per-node AI + approve-to-run commands (guarded) ----
+// FORGE's own brain is served by the forge-ai service (forge_ai_service.py): it grounds the
+// model on identity + fixed skills AND applies what FORGE has LEARNED (recalled lessons), and
+// records the conversation to memory. Every approved command is posted back as a lesson — so
+// the loop closes: command → lesson → better next answer.
+const FORGE_SVC = localStorage.getItem('forge_service')||'http://localhost:8099';
 const CHAT_PERSONAS = {
-  forge:   {persona:'FORGE', base: localStorage.getItem('forge_ollama')||'http://localhost:11434', ollama:true, model: localStorage.getItem('forge_model')||'qwen2.5:3b-instruct'},
+  forge:   {persona:'FORGE', base: FORGE_SVC, service:true},
   tuxedo:  {persona:'NeuronAI', base: API},
   mac:     {persona:'Cipher',   base: localStorage.getItem('forge_cipher')||'http://cipher:8000' },
   olympus: {persona:'Aegis AI', base: localStorage.getItem('forge_aegis')||'http://olympus:8000' },
@@ -253,9 +259,12 @@ async function sendChat(){
   const typing=chatBubble('ai','…',p.persona);
   const where = node==='forge' ? 'cluster' : 'machine ('+node+')';
   const sys=`You are ${p.persona}, the AI operator for this FORGE ${where}. Answer briefly and plainly for a non-technical operator. When an action needs a shell command, propose exactly ONE command on its own line starting with "RUN:". Never claim you ran it — the operator approves and runs it.`;
-  const payload = p.ollama
-    ? JSON.stringify({model:p.model,stream:false,messages:[{role:'system',content:sys},{role:'user',content:text}]})
-    : JSON.stringify({messages:[{role:'system',content:sys},{role:'user',content:text}]});
+  // service: the brain is grounded server-side (identity + skills + recalled lessons) — just send the question.
+  const payload = p.service
+    ? JSON.stringify({question:text, node:'forge'})
+    : p.ollama
+      ? JSON.stringify({model:p.model,stream:false,messages:[{role:'system',content:sys},{role:'user',content:text}]})
+      : JSON.stringify({messages:[{role:'system',content:sys},{role:'user',content:text}]});
   try{
     const r=await fetch(p.base+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:payload});
     const d=await r.json(); typing.remove();
@@ -271,6 +280,13 @@ function renderAIMsg(ans,node,persona){
       `<button class="btn primary" onclick='approveRun(${JSON.stringify(cmd)},${JSON.stringify(node)})'>Approve &amp; Run on ${node}</button></div></div>`; }
   chatBubble('ai',html,persona);
 }
+// Teach FORGE from a command outcome — fire-and-forget POST to the forge-ai service.
+// This is the write-side of the learning loop: every command run becomes a lesson.
+function forgeLearn(node,cmd,code,out){
+  try{ fetch(FORGE_SVC+'/api/learn',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({node:node||'forge',cmd:cmd,exit_code:(code==null?0:code),output:(out||'').slice(0,800)})}); }
+  catch(e){ /* learning is best-effort; never block the operator */ }
+}
 async function approveRun(cmd,node){
   if(!window.forge){ chatBubble('out','⚠ Needs the desktop app to run commands.'); return; }
   if(classifyCmd(cmd)==='destructive' && !confirm('⚠ This looks DESTRUCTIVE:\n\n'+cmd+'\n\nReally run on '+node+'?')) return;
@@ -279,6 +295,7 @@ async function approveRun(cmd,node){
   const o=chatBubble('out','$ '+escapeHtml(cmd)+'\n…');
   const r=await window.forge.run(host,user,cmd);
   o.textContent='$ '+cmd+'\n'+((r.out||'')+(r.err?('\n'+r.err):'')||('(exit '+r.code+')'));
+  forgeLearn(node,cmd,r.code,(r.out||'')+(r.err||''));   // FORGE learns from what just ran
 }
 // baked snapshot so the app shows your real cluster even offline / on first paint
 const BAKED = {"count":3,"online":3,"nodes":[{"name":"olympus","role":"control-plane","ai_system":"FORGE","model":"Mini PC","online":true,"lan_ip":"10.0.0.10","os":"Ubuntu 24.04","hardware":{"cpu":{"model":"Intel Core i7","cores":8,"threads":16},"ram":{"total_gb":64,"type":"DDR4 ECC"},"storage":{"total_tb":3.5,"drives":6},"accelerators":[{"name":"Coral TPU","perf":"4 TOPS","use_case":"vision"}]}},{"name":"hermes","role":"worker","ai_system":"FORGE","model":"Raspberry Pi 5","online":true,"lan_ip":"10.0.0.21","os":"Raspberry Pi OS","hardware":{"cpu":{"model":"ARM Cortex-A76","cores":4,"threads":4},"ram":{"total_gb":8,"type":"LPDDR4X"},"storage":{"total_tb":0.5,"drives":1}}},{"name":"talos","role":"worker","ai_system":"FORGE","model":"Raspberry Pi 5","online":true,"lan_ip":"10.0.0.22","os":"Raspberry Pi OS","hardware":{"cpu":{"model":"ARM Cortex-A76","cores":4,"threads":4},"ram":{"total_gb":8,"type":"LPDDR4X"},"storage":{"total_tb":0.06,"drives":1},"accelerators":[{"name":"Hailo NPU","perf":"40 TOPS","use_case":"edge AI"}]}}]};

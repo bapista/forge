@@ -98,7 +98,7 @@ class ForgeMemory:
     def __init__(self, path: str = "~/.forge/forge_memory.db") -> None:
         self.path = Path(path).expanduser()
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.db = sqlite3.connect(str(self.path))
+        self.db = sqlite3.connect(str(self.path), check_same_thread=False)  # safe for the threaded service
         self.db.executescript(
             """
             CREATE TABLE IF NOT EXISTS memories (
