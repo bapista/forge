@@ -31,6 +31,9 @@
       "maintainer": "Bapista Khan <bapistakhan@gmail.com>",
       "icon": "build/icon.png"
     },
+    "deb": {
+      "afterInstall": "build/deb-postinstall.sh"
+    },
     "mac": {
       "target": "dmg"
     },
