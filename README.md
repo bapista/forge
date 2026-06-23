@@ -21,7 +21,7 @@ curl -sfL https://raw.githubusercontent.com/bapista/forge/main/install.sh | sudo
 ```
 *(A friendlier `get.collab-foundry.com.au` shortcut is on the way.)*
 
-That's it. FORGE installs itself and prints a link like `http://192.168.1.50:30080`.
+That's it. FORGE installs itself and prints a link like `http://192.168.1.50:30888`.
 **Open that link from any device** — your Mac, your phone, your laptop — and FORGE is there.
 
 > Clients can be **anything** (Mac, Windows, Linux, phone). Only the *cluster* machines need to be

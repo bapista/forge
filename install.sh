@@ -6,7 +6,7 @@ set -e
 
 REPO="${FORGE_REPO:-https://github.com/bapista/forge}"
 REF="${FORGE_REF:-main}"
-DASH_PORT=30080
+DASH_PORT=30888
 
 say() { printf "\033[36m▶ %s\033[0m\n" "$1"; }
 

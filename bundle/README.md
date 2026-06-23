@@ -4,7 +4,7 @@
 
 | Module | Status | What it is |
 |---|---|---|
-| **dashboard** | ✅ live | the app launcher on `:30080` — tiles + live cluster status |
+| **dashboard** | ✅ live | the app launcher on `:30888` — tiles + live cluster status |
 | **NeuronAI** | 🔌 wired (tile) | offline multi-persona AI; links to the NeuronAI app. Full in-cluster packaging is the next step. |
 | **Aegis AI** | ⏳ next | sovereign mail server + AI reply engine |
 | **Cipher** | ⏳ next | Apple-Silicon AI workspace (client-side) |
