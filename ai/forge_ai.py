@@ -59,9 +59,18 @@ def forge_system_prompt() -> str:
 
 
 def forge_brain(question: str, system: str | None = None, model: str | None = None, timeout: float = 120.0) -> str:
-    """FORGE's own voice via local Ollama, grounded on its identity + skills. No external AI needed."""
+    """FORGE's own voice via local Ollama — grounded on identity + skills + recalled LESSONS
+    (self-learning, copied from Cipher). No external AI needed."""
+    sys_p = system or forge_system_prompt()
+    try:  # apply what FORGE has learned that's relevant to this question
+        import forge_learn
+        lb = forge_learn.lessons_block(query=question, k=4)
+        if lb:
+            sys_p = sys_p + "\n" + lb
+    except Exception:
+        pass
     body = json.dumps({"model": model or FORGE_CHAT_MODEL, "stream": False,
-                       "messages": [{"role": "system", "content": system or forge_system_prompt()},
+                       "messages": [{"role": "system", "content": sys_p},
                                     {"role": "user", "content": question}]}).encode()
     req = urllib.request.Request(OLLAMA + "/api/chat", data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=timeout) as r:

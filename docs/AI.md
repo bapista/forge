@@ -47,6 +47,9 @@ Goal: **if olympus (control-plane) dies, FORGE keeps running on another machine.
   surviving node becomes control-plane → its resident AI becomes the active FORGE brain. Memory is
   replicated (etcd / a synced SQLite) so nothing is lost.
 
+## Self-learning (copied from Cipher)
+`ai/forge_learn.py` is FORGE's lessons system (Cipher's `lessons.py` pattern): it **files short lessons** from what happens on the cluster (a command that worked/failed, a recurring issue), **recalls** the relevant ones (tag + text overlap + signal), and the brain **applies** them in its answers. Noisy lessons fade (`times_surfaced`); re-learning bumps signal. `learn_from_command()` turns terminal outcomes into lessons — FORGE learns by doing.
+
 ## Build phases
 1. ✅ **Foundation** (this commit): memory (Cipher-modeled) + identity + fixed skills + per-node router +
    guarded terminal classifier + self-health — runnable against NeuronAI/Cipher today.
