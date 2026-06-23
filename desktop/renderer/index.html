@@ -147,8 +147,10 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
 <div class="modal" id="addModal"><div class="sheet">
   <span class="x" onclick="closeAdd()">✕</span>
   <h2>Add a machine</h2>
-  <p>Run this on any Linux box or Raspberry Pi to join your cluster over the Tailscale mesh:</p>
+  <p>Run this on any Linux box or Raspberry Pi on the same Wi-Fi / LAN. It installs <b>Tailscale (WireGuard)</b>, joins the mesh, and auto-joins the cluster — nothing to copy.</p>
+  <input id="tsKey" class="tin" placeholder="(optional) Tailscale auth key — for headless / no-login setup" style="width:100%;margin-bottom:10px" oninput="updateAddCmd()">
   <div class="code" id="addCmd"></div>
+  <p style="margin-top:10px;font-size:12px;color:var(--mut)">Auth key (optional): <a class="cf" href="https://login.tailscale.com/admin/settings/keys" target="_blank" rel="noopener">tailscale.com → settings → keys</a>. Without it, the machine shows a one-time login link.</p>
 </div></div>
 
 <script>
@@ -356,11 +358,13 @@ async function load(){
   try{ const r=await fetch(API+'/api/cluster/nodes'); render(await r.json()); }
   catch(e){ render(BAKED); }
 }
-function openAdd(){
+function updateAddCmd(){
+  const k=((document.getElementById('tsKey')||{}).value||'').trim();
+  const env=k?('FORGE_TS_AUTHKEY='+k+' '):'';
   document.getElementById('addCmd').textContent =
-    'curl -sfL https://raw.githubusercontent.com/bapista/forge/main/add-node.sh | \\\n  FORGE_SERVER=<olympus-tailscale-ip> FORGE_TOKEN=<node-token> sudo sh';
-  document.getElementById('addModal').classList.add('on');
+    'curl -sfL https://raw.githubusercontent.com/bapista/forge/main/install.sh | '+env+'sudo sh';
 }
+function openAdd(){ updateAddCmd(); document.getElementById('addModal').classList.add('on'); }
 function closeAdd(){ document.getElementById('addModal').classList.remove('on'); }
 document.getElementById('t-neuron').onclick=e=>{e.preventDefault(); location.href=API.replace(':8001',':3000');};
 render(BAKED); load(); if(location.hash==='#health') setView('health'); if(location.hash==='#terminal') setView('terminal'); if(location.hash==='#chat') setView('chat'); setInterval(()=>{ if(!document.hidden) load(); }, 8000);

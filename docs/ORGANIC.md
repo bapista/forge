@@ -2,6 +2,9 @@
 
 Run the **same** `install.sh` on every machine on the same Wi-Fi / LAN. No IP to copy, no token to paste — FORGE self-organizes.
 
+## The mesh (Tailscale / WireGuard)
+The installer **auto-installs Tailscale** (WireGuard) on every machine and runs the cluster over the mesh (so nodes work across networks, not just one LAN). Pass `FORGE_TS_AUTHKEY` for headless auth, or the machine prints a one-time login link. The UI's *Add a machine* dialog has an optional auth-key field.
+
 ## How it works
 1. Each node browses **mDNS** (`_forge._tcp`) for an existing control-plane.
 2. **Found** → it auto-joins as an agent (server IP + join token come from the mDNS record).
