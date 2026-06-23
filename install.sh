@@ -97,6 +97,10 @@ if [ "$ROLE" = server ]; then
   say "Deploying FORGE services..."
   k3s kubectl apply -k "${REPO}//bundle?ref=${REF}" 2>/dev/null || true
 
+  say "Giving FORGE its own brain (Ollama models, sized to this machine)..."
+  curl -sfL "${REPO}/raw/${REF}/ai/forge-models.sh" | sh 2>/dev/null \
+    || echo "  (skipped — run ai/forge-models.sh later to pull FORGE's models)"
+
   # Announce ourselves so peers (now and later) auto-join. Token in TXT only if no SECRET.
   TXT="role=server"; [ -z "$SECRET" ] && TXT="$TXT token=$TOKEN"
   cat >/etc/systemd/system/forge-announce.service <<EOF

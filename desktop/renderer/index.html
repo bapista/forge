@@ -208,11 +208,12 @@ async function runCmd(){
 
 // ---- FORGE Chat: per-node AI + approve-to-run commands (guarded) ----
 const CHAT_PERSONAS = {
-  tuxedo:  {persona:'NeuronAI', base: API,                                  },
+  forge:   {persona:'FORGE', base: localStorage.getItem('forge_ollama')||'http://localhost:11434', ollama:true, model: localStorage.getItem('forge_model')||'qwen2.5:3b-instruct'},
+  tuxedo:  {persona:'NeuronAI', base: API},
   mac:     {persona:'Cipher',   base: localStorage.getItem('forge_cipher')||''},
   olympus: {persona:'Aegis AI', base: localStorage.getItem('forge_aegis')||'' },
 };
-let chatNodeSel='tuxedo';
+let chatNodeSel='forge';   // FORGE's own brain by default — works with no other AI present
 function renderChat(){
   const el=document.getElementById('view-chat');
   if(!el.dataset.built){
@@ -230,7 +231,9 @@ function renderChat(){
   sel.innerHTML=Object.entries(CHAT_PERSONAS).map(([n,p])=>`<option value="${n}">${p.persona} · ${n}${p.base?'':' (offline)'}</option>`).join('');
   sel.value=chatNodeSel;
 }
-function nodeIP(node){ const n=((window._d&&window._d.nodes)||[]).find(x=>x.name===node); return n?(n.lan_ip||''):(node==='tuxedo'?'localhost':''); }
+function nodeIP(node){ const nodes=(window._d&&window._d.nodes)||[];
+  if(node==='forge'){ const cp=nodes.find(x=>(x.role||'').includes('control-plane')); return cp?(cp.lan_ip||''):''; }
+  const n=nodes.find(x=>x.name===node); return n?(n.lan_ip||''):(node==='tuxedo'?'localhost':''); }
 function classifyCmd(c){ c=(c||'').trim().toLowerCase();
   if(/\brm\s|mkfs|\bdd\s|shutdown|reboot|kubectl\s+delete|>\s*\/dev|\bdrop\s|\bdelete\s/.test(c)) return 'destructive';
   if(/^(uptime|df|free|top|kubectl get|systemctl status|cat |ls |ip |ping |whoami|hostname)/.test(c)) return 'readonly';
@@ -246,10 +249,16 @@ async function sendChat(){
   chatBubble('user',escapeHtml(text)); inp.value='';
   if(!p.base){ chatBubble('ai',`<b>${p.persona}</b> on <b>${node}</b> isn't reachable yet${node==='olympus'?' — Aegis bridge pending':node==='mac'?" — set the Mac IP (localStorage forge_cipher)":''}.`,p.persona); return; }
   const typing=chatBubble('ai','…',p.persona);
-  const sys=`You are ${p.persona}, the AI operator for this FORGE machine (${node}). Answer briefly and plainly for a non-technical operator. When an action needs a shell command, propose exactly ONE command on its own line starting with "RUN:". Never claim you ran it — the operator approves and runs it.`;
+  const where = node==='forge' ? 'cluster' : 'machine ('+node+')';
+  const sys=`You are ${p.persona}, the AI operator for this FORGE ${where}. Answer briefly and plainly for a non-technical operator. When an action needs a shell command, propose exactly ONE command on its own line starting with "RUN:". Never claim you ran it — the operator approves and runs it.`;
+  const payload = p.ollama
+    ? JSON.stringify({model:p.model,stream:false,messages:[{role:'system',content:sys},{role:'user',content:text}]})
+    : JSON.stringify({messages:[{role:'system',content:sys},{role:'user',content:text}]});
   try{
-    const r=await fetch(p.base+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'system',content:sys},{role:'user',content:text}]})});
-    const d=await r.json(); typing.remove(); renderAIMsg(d.response||d.answer||'(no reply)',node,p.persona);
+    const r=await fetch(p.base+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:payload});
+    const d=await r.json(); typing.remove();
+    const ans = p.ollama ? ((d.message&&d.message.content)||'(no reply)') : (d.response||d.answer||'(no reply)');
+    renderAIMsg(ans,node,p.persona);
   }catch(e){ typing.remove(); chatBubble('ai','('+p.persona+' unreachable: '+escapeHtml(String(e))+')',p.persona); }
 }
 function renderAIMsg(ans,node,persona){

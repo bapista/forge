@@ -28,7 +28,26 @@ PERSONAS: dict[str, dict] = {
     "olympus": {"persona": "Aegis AI", "base": "http://olympus.local:8000", "chat": "/api/chat", "shape": "messages"},  # pending Aegis bridge
     "mac":     {"persona": "Cipher",   "base": "http://mac.local:8000",     "chat": "/api/chat", "shape": "messages"},
 }
-DEFAULT_NODE = "tuxedo"
+DEFAULT_NODE = "forge"   # FORGE answers with its OWN brain by default; personas are upgrades
+
+# ── FORGE's OWN brain — local Ollama, zero external dependency ──────────────
+import os
+OLLAMA = os.environ.get("FORGE_OLLAMA", "http://localhost:11434")
+FORGE_CHAT_MODEL = os.environ.get("FORGE_CHAT_MODEL", "qwen2.5:3b-instruct")  # see ai/models.yaml
+FORGE_SYS = ("You are FORGE, the sovereign cluster operator. Answer briefly and plainly for a "
+             "non-technical operator. When an action needs a shell command, propose ONE command on "
+             'its own line starting with "RUN:" — never claim you ran it; the operator approves.')
+
+
+def forge_brain(question: str, system: str = FORGE_SYS, model: str | None = None, timeout: float = 120.0) -> str:
+    """FORGE's own voice via local Ollama — works with no NeuronAI/Cipher/Aegis present."""
+    body = json.dumps({"model": model or FORGE_CHAT_MODEL, "stream": False,
+                       "messages": [{"role": "system", "content": system},
+                                    {"role": "user", "content": question}]}).encode()
+    req = urllib.request.Request(OLLAMA + "/api/chat", data=body, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        d = json.loads(r.read().decode())
+    return (d.get("message") or {}).get("content", "") or "(no reply)"
 
 # ── Fixed skills (FORGE's defined capabilities) ────────────────────────────
 SKILLS: dict[str, str] = {
@@ -94,20 +113,30 @@ def resident_for(node: str) -> dict:
 
 
 def ask(question: str, node: str = DEFAULT_NODE, memory: ForgeMemory | None = None, timeout: float = 60.0) -> dict:
-    """Route a question to the persona living on `node`; log it to memory."""
-    p = resident_for(node)
-    body = json.dumps({"messages": [{"role": "user", "content": question}]}).encode()
-    req = urllib.request.Request(p["base"] + p["chat"], data=body, headers={"Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            data = json.loads(r.read().decode())
-        answer = data.get("response") or data.get("answer") or json.dumps(data)[:800]
-        ok = True
-    except Exception as exc:  # bridge unreachable / not built yet (e.g. Aegis)
-        answer, ok = f"[{p['persona']} on {node} unreachable: {exc}]", False
+    """Answer `question`. node='forge' uses FORGE's OWN brain (local Ollama). A persona node
+    (tuxedo/mac/olympus) routes to that machine's AI — and falls back to FORGE's brain if that
+    bridge is down. So FORGE ALWAYS answers, with or without NeuronAI/Cipher/Aegis present."""
+    if node == "forge" or node not in PERSONAS:
+        try:
+            answer, persona, ok = forge_brain(question, timeout=timeout), "FORGE", True
+        except Exception as exc:
+            answer, persona, ok = f"[FORGE brain (Ollama) unreachable: {exc}]", "FORGE", False
+    else:
+        p = resident_for(node)
+        body = json.dumps({"messages": [{"role": "user", "content": question}]}).encode()
+        req = urllib.request.Request(p["base"] + p["chat"], data=body, headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                data = json.loads(r.read().decode())
+            answer, persona, ok = (data.get("response") or data.get("answer") or json.dumps(data)[:800]), p["persona"], True
+        except Exception:
+            try:  # persona bridge down -> FORGE's own brain takes over
+                answer, persona, ok = forge_brain(question, timeout=timeout), f"FORGE (fallback for {p['persona']})", True
+            except Exception as exc:
+                answer, persona, ok = f"[{p['persona']} + FORGE brain unreachable: {exc}]", p["persona"], False
     if memory is not None:
-        memory.remember(f"Q@{node}({p['persona']}): {question} -> {answer[:200]}", module="ops", importance=0.6)
-    return {"node": node, "persona": p["persona"], "ok": ok, "answer": answer}
+        memory.remember(f"Q@{node}({persona}): {question} -> {str(answer)[:200]}", module="ops", importance=0.6)
+    return {"node": node, "persona": persona, "ok": ok, "answer": answer}
 
 
 # ── Guarded terminal tool — AI proposes, the OPERATOR approves ─────────────

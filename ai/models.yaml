@@ -1,0 +1,18 @@
+# FORGE's own AI — its default brain, so it works with ZERO external dependencies.
+# Auto-pulled via Ollama (FORGE's engine) on the control-plane (and the GPU node when present).
+# Loaded ON DEMAND — Ollama evicts to fit RAM. The per-node personas (NeuronAI / Cipher / Aegis)
+# are OPTIONAL upgrades layered on top; FORGE runs standalone with just these four.
+
+models:
+  chat:                       # the FORGE assistant voice — ops, explain, diagnose
+    pi:    qwen2.5:1.5b          # very small nodes (Pi, <8GB)
+    small: qwen2.5:3b-instruct   # Pi 8GB / mini-PC
+    large: qwen2.5:7b-instruct   # GPU node / 16GB+ (used automatically when available)
+  fast:  llama3.2:1b           # classification, routing, instant replies
+  code:  qwen2.5-coder:3b      # generate + validate the terminal command proposals
+  embed: nomic-embed-text      # memory search (the Cipher-modeled memory)
+
+# RAM tiers (auto-selected by forge-models.sh):
+#   < 8 GB   -> chat:pi   + fast + embed
+#   >= 8 GB  -> chat:small + fast + code + embed
+#   >= 16 GB -> chat:large + fast + code + embed   (the GPU/Aegis node)
