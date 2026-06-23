@@ -213,7 +213,7 @@ const CHAT_PERSONAS = {
   forge:   {persona:'FORGE', base: localStorage.getItem('forge_ollama')||'http://localhost:11434', ollama:true, model: localStorage.getItem('forge_model')||'qwen2.5:3b-instruct'},
   tuxedo:  {persona:'NeuronAI', base: API},
   mac:     {persona:'Cipher',   base: localStorage.getItem('forge_cipher')||''},
-  olympus: {persona:'Aegis AI', base: localStorage.getItem('forge_aegis')||'' },
+  olympus: {persona:'Aegis AI', base: localStorage.getItem('forge_aegis')||'http://olympus:8000' },
 };
 let chatNodeSel='forge';   // FORGE's own brain by default — works with no other AI present
 function renderChat(){

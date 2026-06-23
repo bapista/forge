@@ -25,7 +25,7 @@ from pathlib import Path
 # FORGE has no single "voice" — the AI resident on each machine answers for it.
 PERSONAS: dict[str, dict] = {
     "tuxedo":  {"persona": "NeuronAI", "base": "http://tuxedo.local:8001",  "chat": "/api/chat", "shape": "messages"},
-    "olympus": {"persona": "Aegis AI", "base": "http://olympus.local:8000", "chat": "/api/chat", "shape": "messages"},  # pending Aegis bridge
+    "olympus": {"persona": "Aegis AI", "base": "http://olympus:8000", "chat": "/api/chat", "shape": "messages"},  # Aegis bridge (live)
     "mac":     {"persona": "Cipher",   "base": "http://mac.local:8000",     "chat": "/api/chat", "shape": "messages"},
 }
 DEFAULT_NODE = "forge"   # FORGE answers with its OWN brain by default; personas are upgrades
