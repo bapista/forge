@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/bapista/forge.git
     targetRevision: main
-    path: clusters/forge/apps
+    path: advanced/clusters/forge/apps
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:

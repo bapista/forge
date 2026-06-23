@@ -1,112 +1,72 @@
-# FORGE — a sovereign, self-hosted K3s platform
+# FORGE — your own sovereign AI platform, in one command
 
 [![validate](https://github.com/bapista/forge/actions/workflows/ci.yml/badge.svg)](https://github.com/bapista/forge/actions/workflows/ci.yml)
-&nbsp;![K3s](https://img.shields.io/badge/Kubernetes-K3s-326CE5?logo=kubernetes&logoColor=white)
-&nbsp;![GitOps](https://img.shields.io/badge/GitOps-Argo%20CD-EF7B4D?logo=argo&logoColor=white)
+&nbsp;![Runs on](https://img.shields.io/badge/runs%20on-Linux%20%26%20Raspberry%20Pi-326CE5)
+&nbsp;![No cloud](https://img.shields.io/badge/cloud-none-1d9e75)
 &nbsp;![License](https://img.shields.io/badge/License-MIT-green)
 
-A five-node, GitOps-managed Kubernetes platform running entirely on my own hardware — Raspberry Pis,
-small x86 compute, and a hardened public gateway, linked over a private mesh. Built to run sovereign,
-offline-first AI services with **no hyperscaler dependency**, and engineered the way a production
-platform should be: declarative, observable, and reproducible from code.
+Turn a few Linux or Raspberry Pi machines into **your own private AI platform** — on your hardware, in
+your home or office, with **no cloud and no subscription**. One command to start. Open it from any
+device. Add more machines when you want more power.
 
-> Status: building in the open. Layers ship incrementally — see the roadmap below.
+> Sovereign by default: your data, your models, your machines. Part of
+> [Collab-Foundry](https://collab-foundry.com.au) — ethical, humanity-first technology for everyone.
 
-## What this repository demonstrates
+## Get started — one machine, one command
 
-| Discipline | How it's shown here |
-|---|---|
-| **Infrastructure as Code** | The whole cluster is provisioned from `infra/ansible/` — no click-ops. |
-| **GitOps** | Argo CD reconciles cluster state from `apps/` via an app-of-apps. Push to `main` → cluster converges. |
-| **Kubernetes** | Multi-arch (ARM64 + x86) K3s, namespaces, workloads, resource limits. |
-| **Networking & TLS** | Ingress + cert-manager + Let's Encrypt (Layer 3). |
-| **Observability** | Prometheus + Grafana + Loki dashboards and alerts (Layer 4). |
-| **Secrets hygiene** | No plaintext secrets in Git — sealed/external-secrets (Layer 5); strict `.gitignore`. |
-| **CI/CD** | GitHub Actions build multi-arch images → registry → Argo CD auto-deploys (Layer 6). |
-
-## Architecture
-
-```
-                       Internet
-                          │
-                  ┌───────▼────────┐
-                  │    TEMPLAR      │  hardened public gateway (ARM)
-                  └───────┬────────┘
-                          │  private mesh (Tailscale)
-        ┌─────────────────┼───────────────────────────┐
-        │                 │                            │
- ┌──────▼──────┐   ┌──────▼──────┐             ┌───────▼──────┐
- │  THE_CORE   │   │    PAWN     │             │   CAVALRY    │
- │ control     │   │ edge NPU /  │             │ compute /    │
- │ plane       │   │ on-device AI│             │ model nodes  │
- └─────────────┘   └─────────────┘             └──────────────┘
-        │
- ┌──────▼──────┐
- │   ENVOY     │  self-hosted mail (Aegis AI)
- └─────────────┘
-
-K3s control plane = THE_CORE · agents = PAWN, ENVOY, CAVALRY, TEMPLAR
-```
-
-**Design rule — inference stays off Kubernetes.** LLM inference (Ollama on CPU/compute nodes,
-Apple-Silicon MLX) does **not** run as pods — model-serving doesn't fit pod scheduling and NPU/Apple
-hardware isn't standard K8s. K3s runs the **services / control plane**; inference lives on dedicated
-nodes and is *exposed* to the cluster. This is a deliberate platform decision, not a limitation.
-
-## Repository layout
-
-```
-infra/ansible/              Layer 1 — IaC: provision K3s across all nodes
-clusters/forge/
-  bootstrap/                Argo CD install
-  root-app.yaml             app-of-apps entrypoint
-  apps/                     Argo CD Applications (one per component/workload)
-platform/cert-manager/      Let's Encrypt ClusterIssuer
-workloads/podinfo/          Demo workload + Ingress + TLS (reconciled by GitOps)
-.github/workflows/ci.yml    Layer 6 — CI: manifest validation on every push/PR
-docs/architecture.md        Topology + design decisions
-Makefile                    provision / bootstrap / diff / lint
-```
-
-The app-of-apps (`clusters/forge/root-app.yaml`) deploys, in ordered sync-waves:
-**cert-manager** + **ingress-nginx** + **sealed-secrets** + **kube-prometheus-stack** → the
-**Let's Encrypt ClusterIssuer** → the **podinfo** workload (served over HTTPS at
-`demo.collab-foundry.com.au`). All declared as Helm/Kustomize Argo CD Applications — *no manual installs.*
-
-## Quick start
+On a Linux box or Raspberry Pi:
 
 ```bash
-# Layer 1 — provision the cluster (fill in your own inventory.ini first)
-cp infra/ansible/inventory.example.ini infra/ansible/inventory.ini
-make provision
+curl -sfL https://raw.githubusercontent.com/bapista/forge/main/install.sh | sudo sh
+```
+*(A friendlier `get.collab-foundry.com.au` shortcut is on the way.)*
 
-# Layer 2 — install Argo CD and hand control to GitOps
-make bootstrap
+That's it. FORGE installs itself and prints a link like `http://192.168.1.50:30080`.
+**Open that link from any device** — your Mac, your phone, your laptop — and FORGE is there.
 
-# From here, everything is GitOps: edit a manifest, push to main,
-# and Argo CD converges the cluster. `make diff` previews changes.
+> Clients can be **anything** (Mac, Windows, Linux, phone). Only the *cluster* machines need to be
+> Linux/Pi — they do the work; everything else just connects.
+
+## Grow it — add a machine when you want more
+
+Got a second Pi or mini-PC? The first machine prints an `add-node` command. Run it on the new box:
+
+```bash
+curl -sfL https://raw.githubusercontent.com/bapista/forge/main/add-node.sh | FORGE_SERVER=<ip> FORGE_TOKEN=<token> sudo sh
 ```
 
-## Roadmap
+The new machine joins your cluster and shares the load. No reconfiguration, no downtime.
 
-- [x] Layer 1 — **IaC** (Ansible provisioning of K3s)
-- [x] Layer 2 — **GitOps** (Argo CD app-of-apps + first workload)
-- [ ] Layer 3 — Ingress + TLS (cert-manager + Let's Encrypt)
-- [ ] Layer 4 — Observability (Prometheus + Grafana + Loki)
-- [ ] Layer 5 — Secrets management (sealed-secrets / external-secrets)
-- [ ] Layer 6 — CI/CD (GitHub Actions, multi-arch images)
-- [ ] Layer 7 — Deploy a NeuronAI / Aegis API service through the pipeline
+## Why FORGE
 
-## Security
+- **Easy.** One command. No Kubernetes knowledge needed — the complexity is hidden.
+- **Sovereign.** Runs entirely on your machines. No hyperscaler, no data leaving home.
+- **Yours to grow.** Start on one machine; add nodes as you need capacity.
+- **Open.** MIT-licensed; inspect and own every line.
 
-No secrets live in this repository. The K3s join token, kubeconfig and any credentials are supplied at
-runtime (environment / vault) and excluded by `.gitignore`; Layer 5 introduces sealed/external-secrets so
-even encrypted secrets are handled the right way. Example inventory uses placeholder addresses only.
+## What's inside
+
+| | |
+|---|---|
+| `install.sh` | the one-command installer (sets up the engine + the FORGE apps) |
+| `add-node.sh` | join another Linux/Pi machine to your cluster |
+| `bundle/` | the FORGE apps that get deployed (starting with the dashboard) |
+| `advanced/` | for engineers — the full GitOps build (Argo CD, Helm, cert-manager, observability) |
+
+Under the hood FORGE uses **K3s** (lightweight Kubernetes) as its engine — but you never have to touch
+it. *Real AI services (chat, mail, assistants) plug into `bundle/` as they ship.*
+
+## For engineers — the advanced path
+
+FORGE is built the way a production platform should be. The full **GitOps** version (Argo CD app-of-apps,
+Helm-managed cert-manager + Let's Encrypt, ingress-nginx, kube-prometheus-stack observability,
+sealed-secrets, CI-validated manifests, Ansible provisioning) lives in [`advanced/`](advanced/) — see
+[`docs/architecture.md`](docs/architecture.md). The simple installer above is the friendly face on top of it.
 
 ## About
 
-Built by **Bapista Khan** — AI Systems Engineer, Sydney 🇦🇺.
-Part of the [Collab-Foundry](https://collab-foundry.com.au) sovereign-AI work (Aegis AI · NeuronAI · Cipher).
+Built by **Bapista Khan** — AI Systems Engineer, Sydney 🇦🇺 —
+as part of [Collab-Foundry](https://collab-foundry.com.au)'s sovereign-AI work (Aegis AI · NeuronAI · Cipher).
 [bapistakhan.com](https://bapistakhan.com) · [LinkedIn](https://www.linkedin.com/in/bapista-khan)
 
 _MIT licensed._

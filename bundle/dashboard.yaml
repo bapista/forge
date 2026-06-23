@@ -1,0 +1,47 @@
+# FORGE dashboard — the friendly face. Served on every node at :30080 (NodePort),
+# so any client (Mac, Windows, phone) can open it. Real AI apps plug in here later.
+apiVersion: v1
+kind: ConfigMap
+metadata: { name: forge-dashboard-html, namespace: forge }
+data:
+  index.html: |
+    <!doctype html><html><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>FORGE</title><style>
+    body{margin:0;background:#0a0e0d;color:#e9efeb;font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+    display:grid;place-items:center;min-height:100vh;text-align:center}
+    .m{width:34px;height:34px;border-radius:9px;margin:0 auto 18px;
+    background:linear-gradient(140deg,#34d399,#1d9e75);box-shadow:0 8px 24px rgba(29,158,117,.4)}
+    h1{font-size:34px;letter-spacing:-.02em;margin:0}.s{color:#94a39b;margin-top:10px}
+    .b{margin-top:18px;display:inline-block;font-size:13px;color:#34d399;border:1px solid #1d9e7555;
+    border-radius:100px;padding:6px 14px;background:#1d9e7522}</style></head>
+    <body><div><div class="m"></div><h1>FORGE is running</h1>
+    <p class="s">Your own sovereign AI platform &middot; on your hardware</p>
+    <div class="b">● online</div></div></body></html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: forge-dashboard, namespace: forge }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: forge-dashboard } }
+  template:
+    metadata: { labels: { app: forge-dashboard } }
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.27-alpine
+          ports: [{ containerPort: 80 }]
+          volumeMounts: [{ name: html, mountPath: /usr/share/nginx/html }]
+          resources: { requests: { cpu: 20m, memory: 16Mi }, limits: { cpu: 100m, memory: 32Mi } }
+      volumes:
+        - name: html
+          configMap: { name: forge-dashboard-html }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: forge-dashboard, namespace: forge }
+spec:
+  type: NodePort
+  selector: { app: forge-dashboard }
+  ports: [{ port: 80, targetPort: 80, nodePort: 30080 }]

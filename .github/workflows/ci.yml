@@ -19,4 +19,4 @@ jobs:
       - name: kustomize build (workloads render cleanly)
         run: |
           curl -sL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.5.0/kustomize_v5.5.0_linux_amd64.tar.gz" | tar xz
-          ./kustomize build workloads/podinfo > /dev/null && echo "podinfo renders OK"
+          ./kustomize build bundle && ./kustomize build advanced/workloads/podinfo > /dev/null && echo "manifests render OK"

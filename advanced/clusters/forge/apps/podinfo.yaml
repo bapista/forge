@@ -1,15 +1,15 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cluster-issuer
+  name: podinfo
   namespace: argocd
-  annotations: { argocd.argoproj.io/sync-wave: "-1" }
+  annotations: { argocd.argoproj.io/sync-wave: "0" }
 spec:
   project: default
   source:
     repoURL: https://github.com/bapista/forge.git
     targetRevision: main
-    path: platform/cert-manager
+    path: advanced/workloads/podinfo
   destination: { server: https://kubernetes.default.svc }
   syncPolicy:
     automated: { prune: true, selfHeal: true }
