@@ -70,6 +70,20 @@ else
   ROLE=agent
 fi
 
+# --- dry-run: show the election decision without installing anything -------------
+if [ -n "${FORGE_DRY_RUN:-}" ]; then
+  printf "\n\033[33m[dry-run]\033[0m no changes made.\n"
+  echo "  my IP:       ${MYIP}"
+  [ -n "${CANDS:-}" ]  && echo "  candidates:  $(echo "$CANDS" | tr '\n' ' ')"
+  [ -n "${LOWEST:-}" ] && echo "  lowest IP:   ${LOWEST}"
+  if [ "$ROLE" = server ]; then
+    echo "  decision:    this machine WOULD become the CONTROL PLANE"
+  else
+    echo "  decision:    this machine WOULD JOIN${FOUND:+ at $(echo "$FOUND" | awk '{print $1}')}"
+  fi
+  exit 0
+fi
+
 # --- 3a. Become the control-plane ------------------------------------------------
 if [ "$ROLE" = server ]; then
   say "This machine is the CONTROL PLANE. ⚙️"

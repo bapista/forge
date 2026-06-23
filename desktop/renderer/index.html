@@ -40,6 +40,14 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
 .ok{color:var(--green)} .warn{color:#e0a426} .bad{color:var(--red)}
 .gauge{height:8px;border-radius:5px;background:rgba(128,128,128,.18);overflow:hidden;margin:2px 0 6px}
 .gauge>i{display:block;height:100%;border-radius:5px}
+/* terminal */
+.termbar{display:flex;gap:8px;margin:8px 0 10px;flex-wrap:wrap}
+.tin{-webkit-app-region:no-drag;background:var(--card);border:1px solid var(--line);border-radius:9px;color:var(--txt);font-size:13px;padding:8px 11px}
+.termout{background:#06100c;border:1px solid var(--line);border-radius:12px;padding:14px;height:44vh;overflow-y:auto;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:#cfeede}
+.termout .tmut{color:#6c7a72}.tcmdline{color:var(--acc);margin-top:7px}.tp{color:var(--acc2)}
+.tres{white-space:pre-wrap;margin:2px 0 4px}.terr{color:#f6a6a6}.tbad{color:#f6a6a6;margin-top:7px}
+.termin{display:flex;gap:8px;align-items:center;margin-top:10px}
+.tcmd{-webkit-app-region:no-drag;flex:1;background:var(--card);border:1px solid var(--line2);border-radius:9px;color:var(--txt);font-family:ui-monospace,monospace;font-size:13px;padding:9px 12px}
 .spacer{flex:1}
 .btn{-webkit-app-region:no-drag;font-size:13px;padding:7px 13px;border:1px solid var(--line2);border-radius:9px;color:var(--txt);background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .btn:hover{border-color:var(--acc);background:var(--acc-soft)}
@@ -110,6 +118,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
     <div class="mnav">
       <button class="mtab active" id="mt-cluster" onclick="setView('cluster')">Cluster</button>
       <button class="mtab" id="mt-health" onclick="setView('health')">Health &amp; Security</button>
+      <button class="mtab" id="mt-terminal" onclick="setView('terminal')">Terminal</button>
     </div>
     <div id="view-cluster">
       <div class="head"><span class="kick">Cluster</span><span class="cnt" id="cnt">—</span></div>
@@ -117,6 +126,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-grad
       <div class="grid" id="grid"></div>
     </div>
     <div id="view-health" style="display:none"></div>
+    <div id="view-terminal" style="display:none"></div>
   </div>
 </div>
 
@@ -138,11 +148,47 @@ let active = 'AEGIS AI';
 let view = 'cluster';
 function setView(v){
   view=v;
-  document.getElementById('view-cluster').style.display = v==='cluster'?'':'none';
-  document.getElementById('view-health').style.display = v==='health'?'':'none';
-  document.getElementById('mt-cluster').classList.toggle('active', v==='cluster');
-  document.getElementById('mt-health').classList.toggle('active', v==='health');
+  ['cluster','health','terminal'].forEach(x=>{
+    document.getElementById('view-'+x).style.display = x===v?'':'none';
+    document.getElementById('mt-'+x).classList.toggle('active', x===v);
+  });
   if(v==='health') renderHealth(window._d||BAKED);
+  if(v==='terminal') renderTerminal(window._d||BAKED);
+}
+function escapeHtml(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function renderTerminal(d){
+  const el=document.getElementById('view-terminal');
+  if(!el.dataset.built){
+    el.dataset.built='1';
+    el.innerHTML = `
+      <div class="termbar">
+        <select id="termNode" class="tin" onchange="document.getElementById('termHost').value=this.value"></select>
+        <input id="termUser" class="tin" placeholder="user (e.g. lord-bapista)" style="width:180px">
+        <input id="termHost" class="tin" placeholder="host / IP" style="width:160px">
+      </div>
+      <div class="termout" id="termOut"><div class="tmut">Pick a machine, type a command, press Enter. Runs over SSH from this device. (The AI will use this same path.)</div></div>
+      <div class="termin"><input id="termCmd" class="tcmd" placeholder="e.g.  uptime   ·   df -h   ·   kubectl get pods -A" onkeydown="if(event.key==='Enter')runCmd()"><button class="btn primary" onclick="runCmd()">Run</button></div>`;
+  }
+  const sel=document.getElementById('termNode');
+  const nodes=((d&&d.nodes)||[]).filter(n=>(n.role||'')!=='planned');
+  sel.innerHTML = nodes.map(n=>`<option value="${n.lan_ip||''}">${n.name} (${n.lan_ip||'?'})</option>`).join('');
+  document.getElementById('termHost').value = sel.value || '';
+}
+async function runCmd(){
+  const host=document.getElementById('termHost').value.trim();
+  const user=document.getElementById('termUser').value.trim();
+  const cmd=document.getElementById('termCmd').value.trim();
+  const out=document.getElementById('termOut');
+  if(!cmd) return;
+  if(!window.forge){ out.innerHTML+=`<div class="tbad">⚠ Terminal needs the desktop app (Electron), not a browser tab.</div>`; return; }
+  out.innerHTML += `<div class="tcmdline"><span class="tp">${escapeHtml(user||'')}@${escapeHtml(host)} $</span> ${escapeHtml(cmd)}</div>`;
+  document.getElementById('termCmd').value='';
+  out.scrollTop=out.scrollHeight;
+  const r=await window.forge.run(host,user,cmd);
+  if(r.out) out.innerHTML += `<pre class="tres">${escapeHtml(r.out)}</pre>`;
+  if(r.err) out.innerHTML += `<pre class="tres terr">${escapeHtml(r.err)}</pre>`;
+  if(!r.out && !r.err) out.innerHTML += `<div class="tmut">(exit ${r.code})</div>`;
+  out.scrollTop=out.scrollHeight;
 }
 // baked snapshot so the app shows your real cluster even offline / on first paint
 const BAKED = {"count":3,"online":3,"nodes":[{"name":"olympus","role":"control-plane","ai_system":"FORGE","model":"Mini PC","online":true,"lan_ip":"10.0.0.10","os":"Ubuntu 24.04","hardware":{"cpu":{"model":"Intel Core i7","cores":8,"threads":16},"ram":{"total_gb":64,"type":"DDR4 ECC"},"storage":{"total_tb":3.5,"drives":6},"accelerators":[{"name":"Coral TPU","perf":"4 TOPS","use_case":"vision"}]}},{"name":"hermes","role":"worker","ai_system":"FORGE","model":"Raspberry Pi 5","online":true,"lan_ip":"10.0.0.21","os":"Raspberry Pi OS","hardware":{"cpu":{"model":"ARM Cortex-A76","cores":4,"threads":4},"ram":{"total_gb":8,"type":"LPDDR4X"},"storage":{"total_tb":0.5,"drives":1}}},{"name":"talos","role":"worker","ai_system":"FORGE","model":"Raspberry Pi 5","online":true,"lan_ip":"10.0.0.22","os":"Raspberry Pi OS","hardware":{"cpu":{"model":"ARM Cortex-A76","cores":4,"threads":4},"ram":{"total_gb":8,"type":"LPDDR4X"},"storage":{"total_tb":0.06,"drives":1},"accelerators":[{"name":"Hailo NPU","perf":"40 TOPS","use_case":"edge AI"}]}}]};
@@ -229,5 +275,5 @@ function openAdd(){
 }
 function closeAdd(){ document.getElementById('addModal').classList.remove('on'); }
 document.getElementById('t-neuron').onclick=e=>{e.preventDefault(); location.href=API.replace(':8001',':3000');};
-render(BAKED); load(); if(location.hash==='#health') setView('health'); setInterval(()=>{ if(!document.hidden) load(); }, 8000);
+render(BAKED); load(); if(location.hash==='#health') setView('health'); if(location.hash==='#terminal') setView('terminal'); setInterval(()=>{ if(!document.hidden) load(); }, 8000);
 </script></body></html>
