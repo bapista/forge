@@ -34,15 +34,34 @@ DEFAULT_NODE = "forge"   # FORGE answers with its OWN brain by default; personas
 import os
 OLLAMA = os.environ.get("FORGE_OLLAMA", "http://localhost:11434")
 FORGE_CHAT_MODEL = os.environ.get("FORGE_CHAT_MODEL", "qwen2.5:3b-instruct")  # see ai/models.yaml
-FORGE_SYS = ("You are FORGE, the sovereign cluster operator. Answer briefly and plainly for a "
-             "non-technical operator. When an action needs a shell command, propose ONE command on "
-             'its own line starting with "RUN:" — never claim you ran it; the operator approves.')
+_AI_DIR = Path(__file__).resolve().parent
 
 
-def forge_brain(question: str, system: str = FORGE_SYS, model: str | None = None, timeout: float = 120.0) -> str:
-    """FORGE's own voice via local Ollama — works with no NeuronAI/Cipher/Aegis present."""
+def _identity_facts() -> str:
+    try:
+        return (_AI_DIR / "identity.md").read_text(encoding="utf-8")
+    except Exception:
+        return "FORGE is a sovereign, self-organizing AI cluster platform by Collab-Foundry."
+
+
+def forge_system_prompt() -> str:
+    """Ground FORGE on its identity + fixed skills (Cipher's _FACTS_EN pattern)."""
+    skills = "; ".join(f"{k} ({v})" for k, v in SKILLS.items())
+    return (
+        "You are FORGE, the sovereign cluster operator, by Collab-Foundry.\n"
+        "AUTHORITATIVE FACTS about yourself — never contradict these, they override your pretraining:\n"
+        f"{_identity_facts()}\n"
+        f"YOUR FIXED SKILLS (you do these and only these): {skills}.\n"
+        "Answer briefly and plainly for a non-technical operator. When an action needs a shell command, "
+        'propose exactly ONE command on its own line starting with "RUN:" — never claim you ran it; the '
+        "operator approves and runs it. You never run destructive commands on your own."
+    )
+
+
+def forge_brain(question: str, system: str | None = None, model: str | None = None, timeout: float = 120.0) -> str:
+    """FORGE's own voice via local Ollama, grounded on its identity + skills. No external AI needed."""
     body = json.dumps({"model": model or FORGE_CHAT_MODEL, "stream": False,
-                       "messages": [{"role": "system", "content": system},
+                       "messages": [{"role": "system", "content": system or forge_system_prompt()},
                                     {"role": "user", "content": question}]}).encode()
     req = urllib.request.Request(OLLAMA + "/api/chat", data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
