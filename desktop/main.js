@@ -2,6 +2,10 @@ const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
 const { execFile } = require('child_process');
 
+// Note: the AppImage sandbox flag is handled at BUILD time, not here — Chromium's setuid
+// sandbox aborts before this JS runs, so --no-sandbox must reach the binary from the AppImage
+// launcher (AppRun). See desktop/scripts/patch-appimage.sh. The .deb keeps its real sandbox.
+
 // FORGE terminal: run a command on a cluster machine over SSH (non-interactive).
 ipcMain.handle('forge:run', (_e, { host, user, cmd }) => new Promise((resolve) => {
   if (!host || !cmd) return resolve({ out: '', err: 'host and command required', code: 1 });
