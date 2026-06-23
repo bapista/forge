@@ -2,16 +2,19 @@
 
 ## Nodes
 
+Reference fleet (names are illustrative — yours can be anything):
+
 | Node | Role | Notes |
 |---|---|---|
-| **THE_CORE** | K3s control plane | etcd/datastore, scheduler, Argo CD, core services |
-| **PAWN** | edge / on-device AI | low-power ARM with an NPU for on-device drafting |
-| **ENVOY** | mail | self-hosted mail server (Aegis AI) |
-| **CAVALRY** | compute | heavier x86 compute / model nodes |
-| **TEMPLAR** | public gateway | hardened ingress + relay; the only public surface |
+| **olympus** | K3s control plane | etcd/datastore, scheduler, core services + storage hub (i7 · 64 GB ECC · Coral TPU) |
+| **hermes** | worker — mail | self-hosted mail server (Aegis AI) — Raspberry Pi 5 |
+| **talos** | worker — edge AI | Hailo-10H NPU (40 TOPS) · realtime CV / GenAI — Raspberry Pi 5 |
+| **tuxedo** | dev / training | Ryzen AI workstation (kept off the critical path) |
+| **templar** | public gateway | hardened SMTP relay / ingress — the only public surface |
 
-All nodes join a **private mesh (Tailscale)**; only TEMPLAR exposes a public surface. Real addresses are
-kept out of this repo (see `inventory.example.ini`).
+All nodes join a **private mesh (Tailscale / WireGuard)** — so they can live on different networks and still
+form one cluster; only **templar** exposes a public surface. Real addresses are kept out of this repo
+(see `inventory.example.ini`).
 
 ## Why K3s
 
