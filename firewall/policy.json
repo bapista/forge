@@ -1,0 +1,39 @@
+{
+  "_comment": "FORGE fleet firewall — desired state, reconciled per-node by forge_firewall.py.",
+  "_trust_model": "default deny inbound / allow outbound; loopback + tailscale mesh fully trusted; SSH always kept (anti-lockout).",
+  "lan": "192.168.1.0/24",
+  "defaults": { "incoming": "deny", "outgoing": "allow" },
+  "trust_interfaces": ["lo", "tailscale0"],
+  "keep_ssh": true,
+  "groups": {
+    "k3s_common": [
+      { "port": "10250", "proto": "tcp", "from": "192.168.1.0/24", "comment": "kubelet" },
+      { "port": "8472", "proto": "udp", "from": "192.168.1.0/24", "comment": "flannel vxlan" },
+      { "port": "51820:51821", "proto": "udp", "from": "192.168.1.0/24", "comment": "wireguard" },
+      { "port": "30000:32767", "proto": "tcp", "from": "192.168.1.0/24", "comment": "nodeport" },
+      { "port": "30000:32767", "proto": "udp", "from": "192.168.1.0/24", "comment": "nodeport" }
+    ],
+    "k3s_control": [
+      { "port": "6443", "proto": "tcp", "from": "192.168.1.0/24", "comment": "k8s api" },
+      { "port": "2379", "proto": "tcp", "from": "192.168.1.0/24", "comment": "etcd" },
+      { "port": "2380", "proto": "tcp", "from": "192.168.1.0/24", "comment": "etcd peer" },
+      { "port": "10256", "proto": "tcp", "from": "192.168.1.0/24", "comment": "kube-proxy health" }
+    ]
+  },
+  "nodes": {
+    "olympus": { "manage": true, "enforce_drift": true, "rules": [
+      { "group": "k3s_common" }, { "group": "k3s_control" },
+      { "port": "80", "proto": "tcp", "comment": "http" },
+      { "port": "9100", "proto": "tcp", "comment": "node-exporter" },
+      { "port": "137,138", "proto": "udp", "comment": "samba" },
+      { "port": "139,445", "proto": "tcp", "comment": "samba" },
+      { "port": "8200", "proto": "tcp", "from": "192.168.1.0/24", "comment": "AEGIS API (LAN only)" }
+    ] },
+    "hermes": { "manage": true, "enforce_drift": true, "rules": [ { "group": "k3s_common" } ] },
+    "talos":  { "manage": true, "enforce_drift": true, "rules": [ { "group": "k3s_common" } ] },
+    "templar": { "manage": true, "enforce_drift": true, "rules": [ { "group": "k3s_common" } ],
+                 "_note": "offline at authoring; reconciles on return" },
+    "tuxedo": { "manage": false, "enforce_drift": false, "rules": [],
+                "_note": "dev workstation — ufw left as-is; flip manage:true to enroll" }
+  }
+}

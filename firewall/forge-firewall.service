@@ -1,0 +1,8 @@
+[Unit]
+Description=FORGE fleet firewall reconciler (ufw <- policy.json)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /etc/forge-firewall/forge_firewall.py

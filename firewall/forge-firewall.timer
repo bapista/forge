@@ -1,0 +1,10 @@
+[Unit]
+Description=Reconcile FORGE firewall to policy periodically
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
