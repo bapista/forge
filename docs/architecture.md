@@ -10,7 +10,12 @@ Reference fleet (names are illustrative — yours can be anything):
 | **hermes** | worker — mail | self-hosted mail server (Aegis AI) — Raspberry Pi 5 |
 | **talos** | worker — edge AI | Hailo-10H NPU (40 TOPS) · realtime CV / GenAI — Raspberry Pi 5 |
 | **tuxedo** | dev / training | Ryzen AI workstation (kept off the critical path) |
-| **gateway** | public gateway | hardened SMTP relay / ingress — the only public surface |
+| **gateway** | public gateway | hardened SMTP relay / ingress — the only public surface (planned cloud VM) |
+
+> **Note:** `gateway` replaces the retired **`templar`** node. `templar` (a bare-metal
+> box) was decommissioned; the public-gateway role now lives on a small cloud VM that
+> joins over the mesh via `add-node`. Older docs/configs referencing `templar` mean this
+> node.
 
 All nodes join a **private mesh (Tailscale / WireGuard)** — so they can live on different networks and still
 form one cluster; only **gateway** exposes a public surface. Real addresses are kept out of this repo
