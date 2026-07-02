@@ -31,8 +31,8 @@
     ] },
     "hermes": { "manage": true, "enforce_drift": true, "rules": [ { "group": "k3s_common" } ] },
     "talos":  { "manage": true, "enforce_drift": true, "rules": [ { "group": "k3s_common" } ] },
-    "gateway": { "manage": true, "enforce_drift": true, "rules": [ { "group": "k3s_common" } ],
-                 "_note": "planned cloud VM (replaces retired templar); reconciles on join" },
+    "templar": { "manage": true, "enforce_drift": true, "rules": [ { "group": "k3s_common" } ],
+                 "_note": "live public gateway / SMTP relay (cloud VPS); joined k3s over the mesh" },
     "tuxedo": { "manage": false, "enforce_drift": false, "rules": [],
                 "_note": "dev workstation — ufw left as-is; flip manage:true to enroll" }
   }

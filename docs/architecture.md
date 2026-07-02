@@ -10,15 +10,15 @@ Reference fleet (names are illustrative — yours can be anything):
 | **hermes** | worker — mail | self-hosted mail server (Aegis AI) — Raspberry Pi 5 |
 | **talos** | worker — edge AI | Hailo-10H NPU (40 TOPS) · realtime CV / GenAI — Raspberry Pi 5 |
 | **tuxedo** | dev / training | Ryzen AI workstation (kept off the critical path) |
-| **gateway** | public gateway | hardened SMTP relay / ingress — the only public surface (planned cloud VM) |
+| **templar** | public gateway | hardened SMTP relay / ingress — the only public surface (cloud VPS) |
 
-> **Note:** `gateway` replaces the retired **`templar`** node. `templar` (a bare-metal
-> box) was decommissioned; the public-gateway role now lives on a small cloud VM that
-> joins over the mesh via `add-node`. Older docs/configs referencing `templar` mean this
-> node.
+> **Note:** `templar` is the live public-gateway box (a cloud VPS running the SMTP relay).
+> It joined the k3s cluster over the mesh via `add-node`. An earlier draft briefly called
+> this node `gateway` and marked templar "retired" — that was wrong; templar is the
+> canonical name and it is not retired.
 
 All nodes join a **private mesh (Tailscale / WireGuard)** — so they can live on different networks and still
-form one cluster; only **gateway** exposes a public surface. Real addresses are kept out of this repo
+form one cluster; only **templar** exposes a public surface. Real addresses are kept out of this repo
 (see `inventory.example.ini`).
 
 ## Why K3s
