@@ -31,8 +31,14 @@
     ] },
     "hermes": { "manage": true, "enforce_drift": true, "rules": [ { "group": "k3s_common" } ] },
     "talos":  { "manage": true, "enforce_drift": true, "rules": [ { "group": "k3s_common" } ] },
-    "templar": { "manage": true, "enforce_drift": true, "rules": [ { "group": "k3s_common" } ],
-                 "_note": "live public gateway / SMTP relay (cloud VPS); joined k3s over the mesh" },
+    "templar": { "manage": true, "enforce_drift": true, "rules": [
+                   { "group": "k3s_common" },
+                   { "port": "25", "proto": "tcp", "comment": "smtp (public relay)" },
+                   { "port": "80", "proto": "tcp", "comment": "http (nginx / acme)" },
+                   { "port": "443", "proto": "tcp", "comment": "https (nginx)" },
+                   { "port": "41641", "proto": "udp", "comment": "tailscale direct" }
+                 ],
+                 "_note": "live public gateway / SMTP relay (cloud VPS); joined k3s over the mesh. node-exporter 9100 intentionally NOT public (mesh-only via tailscale0)." },
     "tuxedo": { "manage": false, "enforce_drift": false, "rules": [],
                 "_note": "dev workstation — ufw left as-is; flip manage:true to enroll" }
   }
