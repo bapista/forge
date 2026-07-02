@@ -60,7 +60,7 @@ it. *Real AI services (chat, mail, assistants) plug into `bundle/` as they ship.
 ## For engineers — the advanced path
 
 > Reference fleet (Tailscale/WireGuard mesh): **olympus** (control-plane) · **hermes** (mail, Pi 5) ·
-> **talos** (Hailo NPU edge AI, Pi 5) · **tuxedo** (dev) · **templar** (gateway). Node names are yours to choose.
+> **talos** (Hailo NPU edge AI, Pi 5) · **tuxedo** (dev) · **gateway** (public gateway). Node names are yours to choose.
 
 FORGE is built the way a production platform should be. The full **GitOps** version (Argo CD app-of-apps,
 Helm-managed cert-manager + Let's Encrypt, ingress-nginx, kube-prometheus-stack observability,
